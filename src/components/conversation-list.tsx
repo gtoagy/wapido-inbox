@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 type Conversation = {
   id: string;
@@ -75,6 +76,29 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('active');
+  const [workflowStatusMap, setWorkflowStatusMap] = useState<Map<string, string>>(new Map());
+
+  const fetchWorkflowStatuses = useCallback(async (convs: Conversation[]) => {
+    const newMap = new Map<string, string>();
+    await Promise.allSettled(
+      convs.map(async (conv) => {
+        try {
+          const res = await fetch(`/api/conversations/${conv.id}/workflow`);
+          const data = await res.json();
+          const executions = data.data || data;
+          if (Array.isArray(executions) && executions.length > 0) {
+            const latest = executions[0];
+            if (latest.status && latest.status !== 'ended') {
+              newMap.set(conv.id, latest.status);
+            }
+          }
+        } catch {
+          // ignore individual failures
+        }
+      })
+    );
+    setWorkflowStatusMap(newMap);
+  }, []);
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -93,6 +117,12 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   useEffect(() => {
     fetchConversations();
   }, [fetchConversations]);
+
+  useEffect(() => {
+    if (conversations.length > 0) {
+      fetchWorkflowStatuses(conversations);
+    }
+  }, [conversations, fetchWorkflowStatuses]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -248,9 +278,26 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                 </Avatar>
                 <div className="flex-1 min-w-0 flex justify-between items-start gap-4 overflow-hidden">
                   <div className="flex-1 min-w-0 overflow-hidden">
-                    <p className="font-medium text-[#111b21] truncate">
-                      {conversation.contactName || conversation.phoneNumber}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-medium text-[#111b21] truncate">
+                        {conversation.contactName || conversation.phoneNumber}
+                      </p>
+                      {workflowStatusMap.get(conversation.id) === 'running' && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-green-50 text-green-700 border-green-200 flex-shrink-0">
+                          Workflow
+                        </Badge>
+                      )}
+                      {workflowStatusMap.get(conversation.id) === 'handoff' && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-orange-50 text-orange-700 border-orange-200 flex-shrink-0">
+                          Handoff
+                        </Badge>
+                      )}
+                      {workflowStatusMap.get(conversation.id) === 'waiting' && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-yellow-50 text-yellow-700 border-yellow-200 flex-shrink-0">
+                          En espera
+                        </Badge>
+                      )}
+                    </div>
                     {conversation.lastMessage && (
                       <p className="text-sm text-[#667781] truncate mt-0.5">
                         {conversation.lastMessage.direction === 'outbound' && (

@@ -119,9 +119,11 @@ type Props = {
   onTemplateSent?: (phoneNumber: string) => Promise<void>;
   onBack?: () => void;
   isVisible?: boolean;
+  conversationStatus?: string;
+  onStatusChange?: () => void;
 };
 
-export function MessageView({ conversationId, phoneNumber, contactName, onTemplateSent, onBack, isVisible = false }: Props) {
+export function MessageView({ conversationId, phoneNumber, contactName, onTemplateSent, onBack, isVisible = false, conversationStatus, onStatusChange }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -133,6 +135,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showInteractiveDialog, setShowInteractiveDialog] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -223,6 +226,25 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
   const handleRefresh = () => {
     setRefreshing(true);
     fetchMessages();
+  };
+
+  const handleToggleStatus = async () => {
+    if (!conversationId || updatingStatus) return;
+    const newStatus = conversationStatus === 'ended' ? 'active' : 'ended';
+    setUpdatingStatus(true);
+    try {
+      const url = `/api/conversations/${conversationId}/status`;
+      await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      onStatusChange?.();
+    } catch (error) {
+      console.error('Error updating conversation status:', error);
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   // Auto-polling for messages (every 5 seconds)
@@ -380,15 +402,41 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
               )}
             </div>
           </div>
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            variant="ghost"
-            size="icon"
-            className="text-[#667781] hover:bg-[#f0f2f5]"
-          >
-            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              onClick={handleToggleStatus}
+              disabled={updatingStatus}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "text-xs",
+                conversationStatus === 'ended'
+                  ? "text-[#00a884] hover:bg-[#00a884]/10"
+                  : "text-red-500 hover:bg-red-50"
+              )}
+            >
+              {conversationStatus === 'ended' ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                  Reabrir
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-3.5 w-3.5 mr-1" />
+                  Cerrar
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              variant="ghost"
+              size="icon"
+              className="text-[#667781] hover:bg-[#f0f2f5]"
+            >
+              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            </Button>
+          </div>
         </div>
       </div>
 

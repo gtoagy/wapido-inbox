@@ -8,6 +8,7 @@ type Conversation = {
   id: string;
   phoneNumber: string;
   contactName?: string;
+  status?: string;
 };
 
 export default function Home() {
@@ -31,6 +32,16 @@ export default function Home() {
     setSelectedConversation(undefined);
   };
 
+  const handleStatusChange = async () => {
+    const conversations = await conversationListRef.current?.refresh();
+    if (conversations && selectedConversation) {
+      const updated = conversations.find(conv => conv.id === selectedConversation.id);
+      if (updated) {
+        setSelectedConversation(updated);
+      }
+    }
+  };
+
   return (
     <div className="h-screen flex">
       <ConversationList
@@ -46,6 +57,8 @@ export default function Home() {
         onTemplateSent={handleTemplateSent}
         onBack={handleBackToList}
         isVisible={!!selectedConversation}
+        conversationStatus={selectedConversation?.status}
+        onStatusChange={handleStatusChange}
       />
     </div>
   );
