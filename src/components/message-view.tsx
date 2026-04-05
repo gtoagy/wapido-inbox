@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { format, isValid, isToday, isYesterday, differenceInHours } from 'date-fns';
-import { RefreshCw, Paperclip, Send, X, AlertCircle, MessageSquare, XCircle, ListTree, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Paperclip, Send, X, AlertCircle, MessageSquare, XCircle, ListTree, ArrowLeft, Info, Play, Hand } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MediaMessage } from '@/components/media-message';
 import { TemplateSelectorDialog } from '@/components/template-selector-dialog';
@@ -112,6 +112,11 @@ function getDisabledInputMessage(messages: Message[]): string {
   return "El último mensaje fue hace más de 24 horas. Envía un template o espera a que el usuario te escriba.";
 }
 
+type WorkflowExecution = {
+  id: string;
+  status: string;
+};
+
 type Props = {
   conversationId?: string;
   phoneNumber?: string;
@@ -119,9 +124,12 @@ type Props = {
   onTemplateSent?: (phoneNumber: string) => Promise<void>;
   onBack?: () => void;
   isVisible?: boolean;
+  onToggleInfo?: () => void;
+  workflowExecution?: WorkflowExecution | null;
+  onWorkflowAction?: () => void;
 };
 
-export function MessageView({ conversationId, phoneNumber, contactName, onTemplateSent, onBack, isVisible = false }: Props) {
+export function MessageView({ conversationId, phoneNumber, contactName, onTemplateSent, onBack, isVisible = false, onToggleInfo, workflowExecution, onWorkflowAction }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -137,6 +145,39 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previousMessageCountRef = useRef(0);
+  const [workflowActionLoading, setWorkflowActionLoading] = useState(false);
+
+  const isWorkflowRunning = workflowExecution?.status === 'running';
+  const isWorkflowHandoff = workflowExecution?.status === 'handoff';
+  const isWorkflowWaiting = workflowExecution?.status === 'waiting';
+  const showWorkflowBanner = isWorkflowRunning || isWorkflowHandoff || isWorkflowWaiting;
+  const isInputDisabledByWorkflow = isWorkflowRunning;
+
+  const handleWorkflowHandoff = async () => {
+    if (!workflowExecution) return;
+    setWorkflowActionLoading(true);
+    try {
+      await fetch(`/api/workflow/${workflowExecution.id}/handoff`, { method: 'POST' });
+      onWorkflowAction?.();
+    } catch (error) {
+      console.error('Error en handoff:', error);
+    } finally {
+      setWorkflowActionLoading(false);
+    }
+  };
+
+  const handleWorkflowResume = async () => {
+    if (!workflowExecution) return;
+    setWorkflowActionLoading(true);
+    try {
+      await fetch(`/api/workflow/${workflowExecution.id}/resume`, { method: 'POST' });
+      onWorkflowAction?.();
+    } catch (error) {
+      console.error('Error al reanudar:', error);
+    } finally {
+      setWorkflowActionLoading(false);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -534,6 +575,52 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
         </div>
       </ScrollArea>
 
+      {showWorkflowBanner && (
+        <div className={cn(
+          "border-t border-border px-4 py-2",
+          isWorkflowHandoff ? "bg-yellow-500/10" : "bg-muted"
+        )}>
+          <div className="max-w-[900px] mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {isWorkflowHandoff ? (
+                <AlertCircle className="h-4 w-4 text-yellow-700 flex-shrink-0" />
+              ) : (
+                <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              )}
+              <span className={cn(
+                "text-sm font-medium",
+                isWorkflowHandoff ? "text-yellow-700" : "text-muted-foreground"
+              )}>
+                {isWorkflowRunning && "Workflow activo"}
+                {isWorkflowHandoff && "Modo manual — el workflow esta pausado"}
+                {isWorkflowWaiting && "Workflow en espera"}
+              </span>
+            </div>
+            {isWorkflowHandoff ? (
+              <Button
+                onClick={handleWorkflowResume}
+                disabled={workflowActionLoading}
+                variant="outline"
+                size="sm"
+              >
+                <Play className="h-3.5 w-3.5 mr-1.5" />
+                Reanudar Workflow
+              </Button>
+            ) : (
+              <Button
+                onClick={handleWorkflowHandoff}
+                disabled={workflowActionLoading}
+                variant="outline"
+                size="sm"
+              >
+                <Hand className="h-3.5 w-3.5 mr-1.5" />
+                Tomar Control
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="border-t border-[#d1d7db] bg-[#f0f2f5]">
         {canSendRegularMessage ? (
           <>
@@ -575,7 +662,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
               <Button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={sending}
+                disabled={sending || isInputDisabledByWorkflow}
                 variant="ghost"
                 size="icon"
                 className="text-[#667781] hover:bg-[#d1d7db]/30"
@@ -586,7 +673,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
               <Button
                 type="button"
                 onClick={() => setShowInteractiveDialog(true)}
-                disabled={sending}
+                disabled={sending || isInputDisabledByWorkflow}
                 size="icon"
                 variant="ghost"
                 className="text-[#667781] hover:text-[#00a884] hover:bg-[#f0f2f5]"
@@ -598,13 +685,13 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                 type="text"
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
-                placeholder="Escribe un mensaje..."
-                disabled={sending}
+                placeholder={isInputDisabledByWorkflow ? "El workflow esta activo..." : "Escribe un mensaje..."}
+                disabled={sending || isInputDisabledByWorkflow}
                 className="flex-1 bg-white border-[#d1d7db] focus-visible:ring-[#00a884] rounded-lg"
               />
               <Button
                 type="submit"
-                disabled={sending || (!messageInput.trim() && !selectedFile)}
+                disabled={sending || isInputDisabledByWorkflow || (!messageInput.trim() && !selectedFile)}
                 size="icon"
                 className="bg-[#00a884] hover:bg-[#008f6f] rounded-full"
               >
