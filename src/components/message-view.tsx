@@ -378,7 +378,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
         "flex-1 flex flex-col bg-[#efeae2]",
         !isVisible && "hidden md:flex"
       )}>
-        <div className="p-3 border-b border-[#d1d7db] bg-[#f0f2f5]">
+        <div className="p-3 border-b border-border bg-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 flex-1">
               {onBack && (
@@ -386,7 +386,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                   onClick={onBack}
                   variant="ghost"
                   size="icon"
-                  className="md:hidden text-[#667781] hover:bg-[#f0f2f5]"
+                  className="md:hidden text-muted-foreground hover:bg-background"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
@@ -423,7 +423,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
       "flex-1 flex flex-col bg-[#efeae2]",
       !isVisible && "hidden md:flex"
     )}>
-      <div className="p-3 border-b border-[#d1d7db] bg-[#f0f2f5]">
+      <div className="p-3 border-b border-border bg-background">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {onBack && (
@@ -431,15 +431,15 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                 onClick={onBack}
                 variant="ghost"
                 size="icon"
-                className="md:hidden text-[#667781] hover:bg-[#f0f2f5] flex-shrink-0"
+                className="md:hidden text-muted-foreground hover:bg-background flex-shrink-0"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             )}
             <div className="flex-1 min-w-0">
-              <h2 className="text-base font-medium text-[#111b21] truncate">{contactName || phoneNumber || 'Conversación'}</h2>
+              <h2 className="text-base font-medium text-foreground truncate">{contactName || phoneNumber || 'Conversación'}</h2>
               {contactName && phoneNumber && (
-                <p className="text-xs text-[#667781] truncate">{phoneNumber}</p>
+                <p className="text-xs text-muted-foreground truncate">{phoneNumber}</p>
               )}
             </div>
           </div>
@@ -452,7 +452,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
               className={cn(
                 "text-xs",
                 conversationStatus === 'ended'
-                  ? "text-[#00a884] hover:bg-[#00a884]/10"
+                  ? "text-primary hover:bg-primary/10"
                   : "text-red-500 hover:bg-red-50"
               )}
             >
@@ -473,10 +473,21 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
               disabled={refreshing}
               variant="ghost"
               size="icon"
-              className="text-[#667781] hover:bg-[#f0f2f5]"
+              className="text-muted-foreground hover:bg-background"
             >
               <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
             </Button>
+            {onToggleInfo && (
+              <Button
+                onClick={onToggleInfo}
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:bg-background"
+                title="Info"
+              >
+                <Info className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -510,8 +521,8 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                     className={cn(
                       'max-w-[70%] rounded-lg px-3 py-2 relative shadow-sm',
                       message.direction === 'outbound'
-                        ? 'bg-[#d9fdd3] text-[#111b21] rounded-br-none'
-                        : 'bg-white text-[#111b21] rounded-bl-none'
+                        ? 'bg-[var(--whatsapp-bubble-outgoing)] text-foreground rounded-br-none'
+                        : 'bg-card text-foreground rounded-bl-none'
                     )}
                   >
                     {message.hasMedia && message.mediaData?.url ? (
@@ -543,7 +554,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                             rel="noopener noreferrer"
                             className={cn(
                               'flex items-center gap-2 text-sm underline cursor-pointer hover:opacity-80',
-                              message.direction === 'outbound' ? 'text-[#00a884]' : 'text-[#00a884]'
+                              message.direction === 'outbound' ? 'text-primary' : 'text-primary'
                             )}
                           >
                             📎 {message.mediaData.filename || message.filename || 'Descargar archivo'}
@@ -575,12 +586,12 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                     )}
 
                     <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[11px] text-[#667781]">
+                      <span className="text-[11px] text-muted-foreground">
                         {formatMessageTime(message.createdAt)}
                       </span>
 
                       {message.messageType && (
-                        <span className="text-[11px] text-[#667781] opacity-60">
+                        <span className="text-[11px] text-muted-foreground opacity-60">
                           · {message.messageType}
                         </span>
                       )}
@@ -669,29 +680,29 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
         </div>
       )}
 
-      <div className="border-t border-[#d1d7db] bg-[#f0f2f5]">
+      <div className="border-t border-border bg-background">
         {canSendRegularMessage ? (
           <>
             {selectedFile && (
-              <div className="p-3 border-b border-[#d1d7db] bg-white">
+              <div className="p-3 border-b border-border bg-card">
                 <div className="flex items-start gap-3">
                   {filePreview ? (
                     <img src={filePreview} alt="Preview" className="w-16 h-16 object-cover rounded" />
                   ) : (
-                    <div className="w-16 h-16 bg-[#f0f2f5] rounded flex items-center justify-center">
-                      <Paperclip className="h-6 w-6 text-[#667781]" />
+                    <div className="w-16 h-16 bg-background rounded flex items-center justify-center">
+                      <Paperclip className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#111b21] truncate">{selectedFile.name}</p>
-                    <p className="text-xs text-[#667781]">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                    <p className="text-sm font-medium text-foreground truncate">{selectedFile.name}</p>
+                    <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024).toFixed(1)} KB</p>
                   </div>
                   <Button
                     onClick={handleRemoveFile}
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="text-[#667781]"
+                    className="text-muted-foreground"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -713,7 +724,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                 disabled={sending || isInputDisabledByWorkflow}
                 variant="ghost"
                 size="icon"
-                className="text-[#667781] hover:bg-[#d1d7db]/30"
+                className="text-muted-foreground hover:bg-muted/30"
                 title="Subir archivo"
               >
                 <Paperclip className="h-5 w-5" />
@@ -724,7 +735,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                 disabled={sending || isInputDisabledByWorkflow}
                 size="icon"
                 variant="ghost"
-                className="text-[#667781] hover:text-[#00a884] hover:bg-[#f0f2f5]"
+                className="text-muted-foreground hover:text-primary hover:bg-background"
                 title="Enviar mensaje interactivo"
               >
                 <ListTree className="h-5 w-5" />
@@ -735,13 +746,13 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                 onChange={(e) => setMessageInput(e.target.value)}
                 placeholder={isInputDisabledByWorkflow ? "El workflow esta activo..." : "Escribe un mensaje..."}
                 disabled={sending || isInputDisabledByWorkflow}
-                className="flex-1 bg-white border-[#d1d7db] focus-visible:ring-[#00a884] rounded-lg"
+                className="flex-1 bg-card border-border focus-visible:ring-primary rounded-lg"
               />
               <Button
                 type="submit"
                 disabled={sending || isInputDisabledByWorkflow || (!messageInput.trim() && !selectedFile)}
                 size="icon"
-                className="bg-[#00a884] hover:bg-[#008f6f] rounded-full"
+                className="bg-primary hover:bg-primary/90 rounded-full"
               >
                 <Send className="h-5 w-5" />
               </Button>
@@ -753,12 +764,12 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-[#8b7000] flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#111b21] mb-3">
+                  <p className="text-sm text-foreground mb-3">
                     {getDisabledInputMessage(messages)}
                   </p>
                   <Button
                     onClick={() => setShowTemplateDialog(true)}
-                    className="bg-[#00a884] hover:bg-[#008f6f]"
+                    className="bg-primary hover:bg-primary/90"
                     size="sm"
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />

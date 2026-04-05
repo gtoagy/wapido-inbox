@@ -168,10 +168,10 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   if (loading) {
     return (
       <div className={cn(
-        "w-full md:w-96 border-r border-[#d1d7db] bg-white flex flex-col",
+        "w-full md:w-96 border-r border-border bg-card flex flex-col",
         isHidden && "hidden md:flex"
       )}>
-        <div className="p-4 border-b border-[#d1d7db] bg-[#f0f2f5]">
+        <div className="p-4 border-b border-border bg-background">
           <div className="flex items-center justify-between mb-3">
             <Skeleton className="h-7 w-20" />
             <Skeleton className="h-9 w-24" />
@@ -195,13 +195,13 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
 
   return (
     <div className={cn(
-      "w-full md:w-96 border-r border-[#d1d7db] bg-white flex flex-col",
+      "w-full md:w-96 border-r border-border bg-card flex flex-col",
       isHidden && "hidden md:flex"
     )}>
-      <div className="p-4 border-b border-[#d1d7db] bg-[#f0f2f5]">
+      <div className="p-4 border-b border-border bg-background">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-[#111b21]">Conversaciones</h1>
+            <h1 className="text-xl font-semibold text-foreground">Conversaciones</h1>
             {isPolling && (
               <div
                 className="h-2 w-2 rounded-full bg-green-500 animate-pulse"
@@ -214,19 +214,19 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
             disabled={refreshing}
             variant="ghost"
             size="icon"
-            className="text-[#667781] hover:bg-[#d1d7db]/30"
+            className="text-muted-foreground hover:bg-muted/30"
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
           </Button>
         </div>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#667781]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar conversación..."
-            className="pl-9 bg-white border-[#d1d7db] focus-visible:ring-[#00a884] rounded-lg"
+            className="pl-9 bg-card border-border focus-visible:ring-primary rounded-lg"
           />
         </div>
         <div className="flex gap-1 mt-3">
@@ -256,7 +256,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
 
       <ScrollArea className="flex-1 h-0 overflow-hidden">
         {filteredConversations.length === 0 ? (
-          <div className="p-4 text-center text-[#667781]">
+          <div className="p-4 text-center text-muted-foreground">
             {searchQuery ? 'No se encontraron conversaciones' : 'Sin conversaciones'}
           </div>
         ) : (
@@ -266,20 +266,20 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               key={conversation.id}
               onClick={() => onSelectConversation(conversation)}
               className={cn(
-                'w-full p-3 pr-4 border-b border-[#e9edef] hover:bg-[#f0f2f5] text-left transition-colors relative overflow-hidden',
-                selectedConversationId === conversation.id && 'bg-[#f0f2f5]'
+                'w-full p-3 pr-4 border-b border-border hover:bg-background text-left transition-colors relative overflow-hidden',
+                selectedConversationId === conversation.id && 'bg-background'
               )}
             >
               <div className="flex gap-3 items-start overflow-hidden">
                 <Avatar className="h-12 w-12 flex-shrink-0">
-                  <AvatarFallback className="bg-[#d1d7db] text-[#111b21] text-sm font-medium">
+                  <AvatarFallback className="bg-muted text-foreground text-sm font-medium">
                     {getAvatarInitials(conversation.contactName, conversation.phoneNumber)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 flex justify-between items-start gap-4 overflow-hidden">
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center gap-1.5">
-                      <p className="font-medium text-[#111b21] truncate">
+                      <p className="font-medium text-foreground truncate">
                         {conversation.contactName || conversation.phoneNumber}
                       </p>
                       {workflowStatusMap.get(conversation.id) === 'running' && (
@@ -299,7 +299,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                       )}
                     </div>
                     {conversation.lastMessage && (
-                      <p className="text-sm text-[#667781] truncate mt-0.5">
+                      <p className="text-sm text-muted-foreground truncate mt-0.5">
                         {conversation.lastMessage.direction === 'outbound' && (
                           <span className="text-[#53bdeb]">✓ </span>
                         )}
@@ -307,7 +307,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                       </p>
                     )}
                   </div>
-                  <span className="text-xs text-[#667781] flex-shrink-0 mt-0.5 ml-4">
+                  <span className="text-xs text-muted-foreground flex-shrink-0 mt-0.5 ml-4">
                     {formatConversationDate(conversation.lastActiveAt)}
                   </span>
                 </div>

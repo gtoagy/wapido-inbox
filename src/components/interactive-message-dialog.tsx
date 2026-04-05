@@ -148,7 +148,7 @@ export function InteractiveMessageDialog({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="header" className="text-[#111b21]">
+            <Label htmlFor="header" className="text-foreground">
               Encabezado (opcional)
             </Label>
             <Input
@@ -156,12 +156,12 @@ export function InteractiveMessageDialog({
               value={header}
               onChange={(e) => setHeader(e.target.value)}
               placeholder="Texto del encabezado"
-              className="bg-white border-[#d1d7db] focus-visible:ring-[#00a884]"
+              className="bg-card border-border focus-visible:ring-primary"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="body" className="text-[#111b21]">
+            <Label htmlFor="body" className="text-foreground">
               Cuerpo <span className="text-red-500">*</span>
             </Label>
             <Textarea
@@ -169,13 +169,13 @@ export function InteractiveMessageDialog({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Texto del mensaje"
-              className="bg-white border-[#d1d7db] focus-visible:ring-[#00a884] min-h-[100px]"
+              className="bg-card border-border focus-visible:ring-primary min-h-[100px]"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-[#111b21]">
+              <Label className="text-foreground">
                 Botones <span className="text-red-500">*</span>
               </Label>
               <Button
@@ -184,7 +184,7 @@ export function InteractiveMessageDialog({
                 size="sm"
                 onClick={handleAddButton}
                 disabled={buttons.length >= 3}
-                className="h-8 text-[#00a884] hover:text-[#008f6f] hover:bg-[#f0f2f5]"
+                className="h-8 text-primary hover:text-primary/90 hover:bg-background"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Agregar Botón
@@ -198,10 +198,10 @@ export function InteractiveMessageDialog({
                     value={button.title}
                     onChange={(e) => handleButtonTitleChange(index, e.target.value)}
                     placeholder={`Título del botón ${index + 1}`}
-                    className="bg-white border-[#d1d7db] focus-visible:ring-[#00a884]"
+                    className="bg-card border-border focus-visible:ring-primary"
                     maxLength={20}
                   />
-                  <span className="text-xs text-[#667781] min-w-[3rem]">
+                  <span className="text-xs text-muted-foreground min-w-[3rem]">
                     {button.title.length}/20
                   </span>
                   {buttons.length > 1 && (
@@ -210,7 +210,7 @@ export function InteractiveMessageDialog({
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRemoveButton(index)}
-                      className="h-9 w-9 text-[#667781] hover:text-red-600 hover:bg-red-50"
+                      className="h-9 w-9 text-muted-foreground hover:text-red-600 hover:bg-red-50"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -220,7 +220,7 @@ export function InteractiveMessageDialog({
             </div>
 
             {buttons.length < 3 && (
-              <p className="text-xs text-[#667781]">
+              <p className="text-xs text-muted-foreground">
                 Puedes agregar {3 - buttons.length} botón{3 - buttons.length !== 1 ? 'es' : ''} más
               </p>
             )}
@@ -236,7 +236,7 @@ export function InteractiveMessageDialog({
           <Button
             onClick={handleSend}
             disabled={!isValid() || sending}
-            className="bg-[#00a884] hover:bg-[#008f6f]"
+            className="bg-primary hover:bg-primary/90"
           >
             {sending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
