@@ -10,6 +10,7 @@ type Conversation = {
   phoneNumber: string;
   contactName?: string;
   status?: string;
+  lastActiveAt?: string;
 };
 
 export default function Home() {
@@ -68,6 +69,8 @@ export default function Home() {
           conversationId={selectedConversation.id}
           contactName={selectedConversation.contactName}
           phoneNumber={selectedConversation.phoneNumber}
+          status={selectedConversation.status}
+          lastActiveAt={selectedConversation.lastActiveAt}
           onClose={() => setShowInfoPanel(false)}
         />
       )}
