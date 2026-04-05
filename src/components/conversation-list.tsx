@@ -33,7 +33,7 @@ function formatConversationDate(timestamp: string): string {
     if (!isValid(date)) return '';
 
     if (isToday(date)) return format(date, 'HH:mm');
-    if (isYesterday(date)) return 'Yesterday';
+    if (isYesterday(date)) return 'Ayer';
     return format(date, 'MMM d');
   } catch {
     return '';
@@ -74,10 +74,12 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('active');
 
   const fetchConversations = useCallback(async () => {
     try {
-      const response = await fetch('/api/conversations');
+      const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
+      const response = await fetch(`/api/conversations${params}`);
       const data = await response.json();
       setConversations(data.data || []);
     } catch (error) {
@@ -86,7 +88,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchConversations();
@@ -114,7 +116,8 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   useImperativeHandle(ref, () => ({
     refresh: async () => {
       setRefreshing(true);
-      const response = await fetch('/api/conversations');
+      const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
+      const response = await fetch(`/api/conversations${params}`);
       const data = await response.json();
       const newConversations = data.data || [];
       setConversations(newConversations);
@@ -168,11 +171,11 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       <div className="p-4 border-b border-[#d1d7db] bg-[#f0f2f5]">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-[#111b21]">Chats</h1>
+            <h1 className="text-xl font-semibold text-[#111b21]">Conversaciones</h1>
             {isPolling && (
               <div
                 className="h-2 w-2 rounded-full bg-green-500 animate-pulse"
-                title="Auto-updating"
+                title="Actualizando"
               />
             )}
           </div>
@@ -192,16 +195,39 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search or start new chat"
+            placeholder="Buscar conversación..."
             className="pl-9 bg-white border-[#d1d7db] focus-visible:ring-[#00a884] rounded-lg"
           />
+        </div>
+        <div className="flex gap-1 mt-3">
+          <Button
+            variant={statusFilter === 'active' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter('active')}
+          >
+            Activos
+          </Button>
+          <Button
+            variant={statusFilter === 'all' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter('all')}
+          >
+            Todos
+          </Button>
+          <Button
+            variant={statusFilter === 'ended' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter('ended')}
+          >
+            Cerrados
+          </Button>
         </div>
       </div>
 
       <ScrollArea className="flex-1 h-0 overflow-hidden">
         {filteredConversations.length === 0 ? (
           <div className="p-4 text-center text-[#667781]">
-            {searchQuery ? 'No conversations found' : 'No conversations yet'}
+            {searchQuery ? 'No se encontraron conversaciones' : 'Sin conversaciones'}
           </div>
         ) : (
           <div className="w-full overflow-hidden">
