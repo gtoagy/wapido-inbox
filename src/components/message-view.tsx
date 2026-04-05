@@ -57,8 +57,8 @@ function formatDateDivider(timestamp: string): string {
     const date = new Date(timestamp);
     if (!isValid(date)) return '';
 
-    if (isToday(date)) return 'Today';
-    if (isYesterday(date)) return 'Yesterday';
+    if (isToday(date)) return 'Hoy';
+    if (isYesterday(date)) return 'Ayer';
     return format(date, 'MMMM d, yyyy');
   } catch {
     return '';
@@ -106,10 +106,10 @@ function getDisabledInputMessage(messages: Message[]): string {
   const inboundMessages = messages.filter(msg => msg.direction === 'inbound');
 
   if (inboundMessages.length === 0) {
-    return "User hasn't messaged yet. Send a template message or wait for them to reply.";
+    return "El usuario aún no ha enviado mensaje. Envía un template o espera a que responda.";
   }
 
-  return "Last message was over 24 hours ago. Send a template message or wait for the user to message you.";
+  return "El último mensaje fue hace más de 24 horas. Envía un template o espera a que el usuario te escriba.";
 }
 
 type Props = {
@@ -304,7 +304,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
         "flex-1 flex items-center justify-center bg-muted/50",
         !isVisible && "hidden md:flex"
       )}>
-        <p className="text-muted-foreground">Select a conversation to view messages</p>
+        <p className="text-muted-foreground">Selecciona una conversación de la lista para ver mensajes y detalles.</p>
       </div>
     );
   }
@@ -374,7 +374,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
               </Button>
             )}
             <div className="flex-1 min-w-0">
-              <h2 className="text-base font-medium text-[#111b21] truncate">{contactName || phoneNumber || 'Conversation'}</h2>
+              <h2 className="text-base font-medium text-[#111b21] truncate">{contactName || phoneNumber || 'Conversación'}</h2>
               {contactName && phoneNumber && (
                 <p className="text-xs text-[#667781] truncate">{phoneNumber}</p>
               )}
@@ -395,7 +395,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
       <ScrollArea ref={messagesContainerRef} className="flex-1 h-0 p-4">
         <div className="max-w-[900px] mx-auto">
         {messages.length === 0 ? (
-          <p className="text-center text-muted-foreground">No messages yet</p>
+          <p className="text-center text-muted-foreground">Inicio del historial</p>
         ) : (
           messages.map((message, index) => {
             const prevMessage = index > 0 ? messages[index - 1] : null;
@@ -457,7 +457,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                               message.direction === 'outbound' ? 'text-[#00a884]' : 'text-[#00a884]'
                             )}
                           >
-                            📎 {message.mediaData.filename || message.filename || 'Download file'}
+                            📎 {message.mediaData.filename || message.filename || 'Descargar archivo'}
                           </a>
                         )}
                       </div>
@@ -514,7 +514,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                     {message.direction === 'outbound' && message.status === 'failed' && (
                       <div className="mt-1">
                         <span className="text-[11px] text-red-500 flex items-center gap-1">
-                          Not delivered
+                          No entregado
                         </span>
                       </div>
                     )}
@@ -579,7 +579,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                 variant="ghost"
                 size="icon"
                 className="text-[#667781] hover:bg-[#d1d7db]/30"
-                title="Upload file"
+                title="Subir archivo"
               >
                 <Paperclip className="h-5 w-5" />
               </Button>
@@ -590,7 +590,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                 size="icon"
                 variant="ghost"
                 className="text-[#667781] hover:text-[#00a884] hover:bg-[#f0f2f5]"
-                title="Send interactive message"
+                title="Enviar mensaje interactivo"
               >
                 <ListTree className="h-5 w-5" />
               </Button>
@@ -598,7 +598,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                 type="text"
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
-                placeholder="Type a message"
+                placeholder="Escribe un mensaje..."
                 disabled={sending}
                 className="flex-1 bg-white border-[#d1d7db] focus-visible:ring-[#00a884] rounded-lg"
               />
@@ -627,7 +627,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                     size="sm"
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    Send template
+                    Enviar Template
                   </Button>
                 </div>
               </div>
