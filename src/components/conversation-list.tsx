@@ -74,10 +74,12 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('active');
 
   const fetchConversations = useCallback(async () => {
     try {
-      const response = await fetch('/api/conversations');
+      const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
+      const response = await fetch(`/api/conversations${params}`);
       const data = await response.json();
       setConversations(data.data || []);
     } catch (error) {
@@ -86,7 +88,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchConversations();
@@ -114,7 +116,8 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   useImperativeHandle(ref, () => ({
     refresh: async () => {
       setRefreshing(true);
-      const response = await fetch('/api/conversations');
+      const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
+      const response = await fetch(`/api/conversations${params}`);
       const data = await response.json();
       const newConversations = data.data || [];
       setConversations(newConversations);
@@ -195,6 +198,29 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
             placeholder="Buscar conversación..."
             className="pl-9 bg-white border-[#d1d7db] focus-visible:ring-[#00a884] rounded-lg"
           />
+        </div>
+        <div className="flex gap-1 mt-3">
+          <Button
+            variant={statusFilter === 'active' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter('active')}
+          >
+            Activos
+          </Button>
+          <Button
+            variant={statusFilter === 'all' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter('all')}
+          >
+            Todos
+          </Button>
+          <Button
+            variant={statusFilter === 'ended' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter('ended')}
+          >
+            Cerrados
+          </Button>
         </div>
       </div>
 
