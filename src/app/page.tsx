@@ -3,15 +3,18 @@
 import { useState, useRef } from 'react';
 import { ConversationList, type ConversationListRef } from '@/components/conversation-list';
 import { MessageView } from '@/components/message-view';
+import { InfoPanel } from '@/components/info-panel';
 
 type Conversation = {
   id: string;
   phoneNumber: string;
   contactName?: string;
+  status?: string;
 };
 
 export default function Home() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation>();
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
   const conversationListRef = useRef<ConversationListRef>(null);
 
   const handleTemplateSent = async (phoneNumber: string) => {
@@ -46,7 +49,16 @@ export default function Home() {
         onTemplateSent={handleTemplateSent}
         onBack={handleBackToList}
         isVisible={!!selectedConversation}
+        onToggleInfo={() => setShowInfoPanel(prev => !prev)}
       />
+      {showInfoPanel && selectedConversation && (
+        <InfoPanel
+          conversationId={selectedConversation.id}
+          contactName={selectedConversation.contactName}
+          phoneNumber={selectedConversation.phoneNumber}
+          onClose={() => setShowInfoPanel(false)}
+        />
+      )}
     </div>
   );
 }
