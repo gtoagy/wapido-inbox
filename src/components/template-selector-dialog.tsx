@@ -59,7 +59,7 @@ export function TemplateSelectorDialog({ open, onOpenChange, phoneNumber, onTemp
       setTemplates(approvedTemplates);
     } catch (err) {
       console.error('Error fetching templates:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load templates');
+      setError(err instanceof Error ? err.message : 'Error al cargar templates');
     } finally {
       setLoading(false);
     }
@@ -96,14 +96,14 @@ export function TemplateSelectorDialog({ open, onOpenChange, phoneNumber, onTemp
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to send template');
+        throw new Error(data.error || 'Error al enviar template');
       }
 
       onOpenChange(false);
       onTemplateSent?.();
     } catch (err) {
       console.error('Error sending template:', err);
-      setError(err instanceof Error ? err.message : 'Failed to send template');
+      setError(err instanceof Error ? err.message : 'Error al enviar template');
     } finally {
       setSending(null);
     }
@@ -141,9 +141,9 @@ export function TemplateSelectorDialog({ open, onOpenChange, phoneNumber, onTemp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Send template message</DialogTitle>
+          <DialogTitle>Enviar Template</DialogTitle>
           <DialogDescription>
-            Select a template to send to {phoneNumber}
+            Selecciona un template para enviar a {phoneNumber}
           </DialogDescription>
         </DialogHeader>
 
@@ -159,7 +159,7 @@ export function TemplateSelectorDialog({ open, onOpenChange, phoneNumber, onTemp
           </div>
         ) : templates.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
-            No approved templates found
+            No se encontraron templates aprobados
           </div>
         ) : (
           <ScrollArea className="h-[400px] pr-4">
@@ -194,7 +194,7 @@ export function TemplateSelectorDialog({ open, onOpenChange, phoneNumber, onTemp
                       ) : (
                         <>
                           <Send className="h-4 w-4 mr-1" />
-                          Send
+                          Enviar
                         </>
                       )}
                     </Button>
@@ -209,7 +209,7 @@ export function TemplateSelectorDialog({ open, onOpenChange, phoneNumber, onTemp
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Cancelar
           </Button>
         </div>
       </DialogContent>

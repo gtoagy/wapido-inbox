@@ -83,12 +83,12 @@ export function InteractiveMessageDialog({
 
   const handleSend = async () => {
     if (!isValid()) {
-      setError('Please fill in the body and all button titles');
+      setError('Completa el cuerpo del mensaje y todos los títulos de botones');
       return;
     }
 
     if (!conversationId || !phoneNumber) {
-      setError('No conversation selected');
+      setError('Sin conversación seleccionada');
       return;
     }
 
@@ -113,7 +113,7 @@ export function InteractiveMessageDialog({
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to send interactive message');
+        throw new Error(data.error || 'Error al enviar mensaje interactivo');
       }
 
       handleReset();
@@ -121,7 +121,7 @@ export function InteractiveMessageDialog({
       onMessageSent?.();
     } catch (err) {
       console.error('Error sending interactive message:', err);
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+      setError(err instanceof Error ? err.message : 'Error al enviar mensaje');
     } finally {
       setSending(false);
     }
@@ -134,9 +134,9 @@ export function InteractiveMessageDialog({
     }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Send interactive message</DialogTitle>
+          <DialogTitle>Mensaje Interactivo</DialogTitle>
           <DialogDescription>
-            Create a message with interactive buttons
+            Envía un mensaje interactivo con botones
           </DialogDescription>
         </DialogHeader>
 
@@ -149,26 +149,26 @@ export function InteractiveMessageDialog({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="header" className="text-[#111b21]">
-              Header (optional)
+              Encabezado (opcional)
             </Label>
             <Input
               id="header"
               value={header}
               onChange={(e) => setHeader(e.target.value)}
-              placeholder="Add a header to your message"
+              placeholder="Texto del encabezado"
               className="bg-white border-[#d1d7db] focus-visible:ring-[#00a884]"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="body" className="text-[#111b21]">
-              Body <span className="text-red-500">*</span>
+              Cuerpo <span className="text-red-500">*</span>
             </Label>
             <Textarea
               id="body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Enter your message text"
+              placeholder="Texto del mensaje"
               className="bg-white border-[#d1d7db] focus-visible:ring-[#00a884] min-h-[100px]"
             />
           </div>
@@ -176,7 +176,7 @@ export function InteractiveMessageDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-[#111b21]">
-                Buttons <span className="text-red-500">*</span>
+                Botones <span className="text-red-500">*</span>
               </Label>
               <Button
                 type="button"
@@ -187,7 +187,7 @@ export function InteractiveMessageDialog({
                 className="h-8 text-[#00a884] hover:text-[#008f6f] hover:bg-[#f0f2f5]"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Add button
+                Agregar Botón
               </Button>
             </div>
 
@@ -197,7 +197,7 @@ export function InteractiveMessageDialog({
                   <Input
                     value={button.title}
                     onChange={(e) => handleButtonTitleChange(index, e.target.value)}
-                    placeholder={`Button ${index + 1} title`}
+                    placeholder={`Título del botón ${index + 1}`}
                     className="bg-white border-[#d1d7db] focus-visible:ring-[#00a884]"
                     maxLength={20}
                   />
@@ -221,7 +221,7 @@ export function InteractiveMessageDialog({
 
             {buttons.length < 3 && (
               <p className="text-xs text-[#667781]">
-                You can add up to {3 - buttons.length} more button{3 - buttons.length !== 1 ? 's' : ''}
+                Puedes agregar {3 - buttons.length} botón{3 - buttons.length !== 1 ? 'es' : ''} más
               </p>
             )}
           </div>
@@ -231,7 +231,7 @@ export function InteractiveMessageDialog({
 
         <div className="flex justify-between gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             onClick={handleSend}
@@ -243,7 +243,7 @@ export function InteractiveMessageDialog({
             ) : (
               <>
                 <Send className="h-4 w-4 mr-1" />
-                Send
+                Enviar
               </>
             )}
           </Button>

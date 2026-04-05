@@ -54,7 +54,7 @@ export function TemplateParametersDialog({
 
   const handleSend = async () => {
     if (!allParametersFilled) {
-      setError('Please fill in all parameters');
+      setError('Completa todos los parámetros');
       return;
     }
 
@@ -78,7 +78,7 @@ export function TemplateParametersDialog({
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to send template');
+        throw new Error(data.error || 'Error al enviar template');
       }
 
       onOpenChange(false);
@@ -86,7 +86,7 @@ export function TemplateParametersDialog({
       onTemplateSent?.();
     } catch (err) {
       console.error('Error sending template:', err);
-      setError(err instanceof Error ? err.message : 'Failed to send template');
+      setError(err instanceof Error ? err.message : 'Error al enviar template');
     } finally {
       setSending(false);
     }
@@ -115,9 +115,9 @@ export function TemplateParametersDialog({
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <DialogTitle>Template parameters</DialogTitle>
+              <DialogTitle>Parámetros del Template</DialogTitle>
               <DialogDescription>
-                Fill in the parameters for {template.name}
+                Completa los parámetros para {template.name}
               </DialogDescription>
             </div>
           </div>
@@ -148,12 +148,12 @@ export function TemplateParametersDialog({
                   id={param.name}
                   value={parameterValues[param.name] || ''}
                   onChange={(e) => handleParameterChange(param.name, e.target.value)}
-                  placeholder={param.example || `Enter ${formatParameterName(param.name)}`}
+                  placeholder={param.example || `Ingresa ${formatParameterName(param.name)}`}
                   className="bg-white border-[#d1d7db] focus-visible:ring-[#00a884]"
                 />
                 {param.example && (
                   <p className="text-xs text-[#667781]">
-                    Example: {param.example}
+                    Ejemplo: {param.example}
                   </p>
                 )}
               </div>
@@ -165,7 +165,7 @@ export function TemplateParametersDialog({
 
         <div className="flex justify-between gap-2">
           <Button variant="outline" onClick={onBack}>
-            Back
+            Atrás
           </Button>
           <Button
             onClick={handleSend}
@@ -177,7 +177,7 @@ export function TemplateParametersDialog({
             ) : (
               <>
                 <Send className="h-4 w-4 mr-1" />
-                Send template
+                Enviar Template
               </>
             )}
           </Button>

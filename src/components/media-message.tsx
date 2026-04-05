@@ -41,7 +41,7 @@ export function MediaMessage({ mediaId, messageType, caption, filename, isOutbou
     return (
       <div className="w-64 h-48 bg-muted rounded flex items-center justify-center">
         <p className={cn('text-sm', isOutbound ? 'text-green-100' : 'text-muted-foreground')}>
-          Media unavailable
+          Medio no disponible
         </p>
       </div>
     );
@@ -52,7 +52,7 @@ export function MediaMessage({ mediaId, messageType, caption, filename, isOutbou
       {messageType === 'image' && (
         <img
           src={mediaUrl}
-          alt={caption || 'Image'}
+          alt={caption || 'Imagen'}
           className="rounded max-w-full h-auto max-h-96"
           onError={handleLoadError}
         />
@@ -79,7 +79,7 @@ export function MediaMessage({ mediaId, messageType, caption, filename, isOutbou
           className="flex items-center gap-2 text-sm underline cursor-pointer hover:opacity-80 transition-opacity text-[#00a884]"
         >
           <FileText className="h-4 w-4" />
-          {filename || 'Download document'}
+          {filename || 'Descargar documento'}
         </a>
       )}
     </div>
