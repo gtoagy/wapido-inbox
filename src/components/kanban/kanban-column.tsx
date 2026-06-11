@@ -67,9 +67,9 @@ export function KanbanColumn({
             ) : (
               conversations.map((conv) => (
                 <ConversationCard
-                  key={conv.id}
+                  key={conv.groupKey}
                   conversation={conv}
-                  isDragging={draggingId === conv.id}
+                  isDragging={draggingId === conv.groupKey}
                   onDragStart={onDragStart}
                   onDragEnd={onDragEnd}
                   onClick={onCardClick}

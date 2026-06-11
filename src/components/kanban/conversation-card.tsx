@@ -2,12 +2,17 @@
 
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Bot, User } from 'lucide-react';
+import { MessagesSquare } from 'lucide-react';
 import { prefetchMessages } from '@/components/message-view';
+import { AssignmentBadge } from '@/components/assignment-badge';
 
 export type KanbanConversation = {
+  /** Conversación representativa (la más reciente del contacto) — la que se abre. */
   id: string;
+  /** Clave de agrupación por contacto (teléfono): identifica la tarjeta en el board. */
+  groupKey: string;
+  /** Cuántas conversaciones tiene este contacto. */
+  count?: number;
   phoneNumber: string;
   contactName?: string;
   status?: string;
@@ -40,15 +45,10 @@ type Props = {
 };
 
 export function ConversationCard({ conversation, isDragging, onDragStart, onDragEnd, onClick }: Props) {
-  const { workflowStatus } = conversation;
-  // Eje "agente vs humano": running = el agente IA responde; handoff = lo
-  // atiende un humano. waiting = el workflow espera (lo mostramos como agente).
-  const isHuman = workflowStatus === 'handoff';
-
   return (
     <div
       draggable
-      onDragStart={() => onDragStart(conversation.id)}
+      onDragStart={() => onDragStart(conversation.groupKey)}
       onDragEnd={onDragEnd}
       onMouseEnter={() => prefetchMessages(conversation.id)}
       onClick={() => onClick?.(conversation)}
@@ -66,24 +66,21 @@ export function ConversationCard({ conversation, isDragging, onDragStart, onDrag
         </Avatar>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-medium text-sm text-foreground truncate">
-              {conversation.contactName || conversation.phoneNumber}
-            </p>
-            {workflowStatus && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  'text-[10px] px-1.5 py-0 h-4 flex-shrink-0 gap-0.5',
-                  isHuman
-                    ? 'bg-orange-50 text-orange-700 border-orange-200'
-                    : 'bg-green-50 text-green-700 border-green-200',
-                )}
-                title={isHuman ? 'Atendido por un humano' : 'Atendido por el agente IA'}
-              >
-                {isHuman ? <User className="h-2.5 w-2.5" /> : <Bot className="h-2.5 w-2.5" />}
-                {isHuman ? 'Humano' : 'Agente'}
-              </Badge>
-            )}
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <p className="font-medium text-sm text-foreground truncate">
+                {conversation.contactName || conversation.phoneNumber}
+              </p>
+              {conversation.count != null && conversation.count > 1 && (
+                <span
+                  className="flex-shrink-0 inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 text-[10px] font-medium text-muted-foreground"
+                  title={`${conversation.count} conversaciones de este contacto`}
+                >
+                  <MessagesSquare className="h-2.5 w-2.5" />
+                  {conversation.count}
+                </span>
+              )}
+            </div>
+            <AssignmentBadge workflowStatus={conversation.workflowStatus} />
           </div>
           {conversation.lastMessage && (
             <p className="text-xs text-muted-foreground truncate mt-1">

@@ -15,33 +15,44 @@ type Conversation = {
 
 export default function Home() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation>();
+  // Todas las conversaciones del contacto seleccionado (para el historial unificado).
+  const [selectedContactConvs, setSelectedContactConvs] = useState<Conversation[]>();
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const conversationListRef = useRef<ConversationListRef>(null);
 
-  const handleTemplateSent = async (phoneNumber: string) => {
-    // Refresh the conversation list and get the updated conversations
-    const conversations = await conversationListRef.current?.refresh();
+  const handleSelect = (conversation: Conversation, contactConversations: Conversation[]) => {
+    setSelectedConversation(conversation);
+    setSelectedContactConvs(contactConversations);
+  };
 
-    // Find and select the conversation for the phone number
+  // Reconstruye el contacto seleccionado tras un refresh (la conv más reciente
+  // del teléfono pasa a ser la principal).
+  const reselectContact = (conversations: Conversation[], phoneNumber: string) => {
+    const contactConvs = conversations
+      .filter(conv => conv.phoneNumber === phoneNumber)
+      .sort((a, b) => new Date(b.lastActiveAt || 0).getTime() - new Date(a.lastActiveAt || 0).getTime());
+    if (contactConvs.length) {
+      setSelectedConversation(contactConvs[0]);
+      setSelectedContactConvs(contactConvs);
+    }
+  };
+
+  const handleTemplateSent = async (phoneNumber: string) => {
+    const conversations = await conversationListRef.current?.refresh();
     if (conversations) {
-      const conversation = conversations.find(conv => conv.phoneNumber === phoneNumber);
-      if (conversation) {
-        setSelectedConversation(conversation);
-      }
+      reselectContact(conversations, phoneNumber);
     }
   };
 
   const handleBackToList = () => {
     setSelectedConversation(undefined);
+    setSelectedContactConvs(undefined);
   };
 
   const handleStatusChange = async () => {
     const conversations = await conversationListRef.current?.refresh();
     if (conversations && selectedConversation) {
-      const updated = conversations.find(conv => conv.id === selectedConversation.id);
-      if (updated) {
-        setSelectedConversation(updated);
-      }
+      reselectContact(conversations, selectedConversation.phoneNumber);
     }
   };
 
@@ -49,12 +60,14 @@ export default function Home() {
     <div className="h-screen flex">
       <ConversationList
         ref={conversationListRef}
-        onSelectConversation={setSelectedConversation}
+        onSelectConversation={handleSelect}
         selectedConversationId={selectedConversation?.id}
         isHidden={!!selectedConversation}
       />
       <MessageView
+        key={selectedConversation?.id}
         conversationId={selectedConversation?.id}
+        contactConversations={selectedContactConvs}
         phoneNumber={selectedConversation?.phoneNumber}
         contactName={selectedConversation?.contactName}
         onTemplateSent={handleTemplateSent}

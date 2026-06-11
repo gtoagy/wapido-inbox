@@ -1,17 +1,18 @@
 'use client';
 
-import { useEffect, useState, forwardRef, useImperativeHandle, useCallback, useRef } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle, useCallback, useMemo, useRef } from 'react';
 import { format, isValid, isToday, isYesterday } from 'date-fns';
-import Link from 'next/link';
-import { LayoutGrid, RefreshCw, Search } from 'lucide-react';
+import { MessagesSquare, RefreshCw, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ViewSwitcher } from '@/components/view-switcher';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { prefetchMessages } from '@/components/message-view';
+import { AssignmentBadge } from '@/components/assignment-badge';
 
 type Conversation = {
   id: string;
@@ -28,6 +29,12 @@ type Conversation = {
     type?: string;
   };
 };
+
+function msTime(value?: string): number {
+  if (!value) return 0;
+  const t = new Date(value).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
 
 function formatConversationDate(timestamp: string): string {
   try {
@@ -60,7 +67,7 @@ function getAvatarInitials(contactName?: string, phoneNumber?: string): string {
 }
 
 type Props = {
-  onSelectConversation: (conversation: Conversation) => void;
+  onSelectConversation: (conversation: Conversation, contactConversations: Conversation[]) => void;
   selectedConversationId?: string;
   isHidden?: boolean;
 };
@@ -69,6 +76,26 @@ export type ConversationListRef = {
   refresh: () => Promise<Conversation[]>;
   selectByPhoneNumber: (phoneNumber: string) => void;
 };
+
+// Agrupa conversaciones por contacto (teléfono). Devuelve una entrada por
+// contacto con la conversación más reciente como representativa.
+type ContactGroup = { rep: Conversation; all: Conversation[]; count: number };
+
+function groupByContact(conversations: Conversation[]): ContactGroup[] {
+  const byContact = new Map<string, Conversation[]>();
+  for (const conv of conversations) {
+    const key = conv.phoneNumber || conv.id;
+    const arr = byContact.get(key);
+    if (arr) arr.push(conv);
+    else byContact.set(key, [conv]);
+  }
+  return Array.from(byContact.values())
+    .map((convs) => {
+      const all = convs.slice().sort((a, b) => msTime(b.lastActiveAt) - msTime(a.lastActiveAt));
+      return { rep: all[0], all, count: all.length };
+    })
+    .sort((a, b) => msTime(b.rep.lastActiveAt) - msTime(a.rep.lastActiveAt));
+}
 
 export const ConversationList = forwardRef<ConversationListRef, Props>(
   ({ onSelectConversation, selectedConversationId, isHidden = false }, ref) => {
@@ -158,9 +185,11 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   });
 
   const selectByPhoneNumber = (phoneNumber: string) => {
-    const conversation = conversations.find(conv => conv.phoneNumber === phoneNumber);
-    if (conversation) {
-      onSelectConversation(conversation);
+    const all = conversations
+      .filter(conv => conv.phoneNumber === phoneNumber)
+      .sort((a, b) => msTime(b.lastActiveAt) - msTime(a.lastActiveAt));
+    if (all.length) {
+      onSelectConversation(all[0], all);
     }
   };
 
@@ -178,11 +207,12 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
     selectByPhoneNumber
   }));
 
-  const filteredConversations = conversations.filter((conv) => {
+  const contactGroups = useMemo(() => groupByContact(conversations), [conversations]);
+  const filteredGroups = contactGroups.filter((g) => {
     const query = searchQuery.toLowerCase();
     return (
-      conv.phoneNumber.toLowerCase().includes(query) ||
-      conv.contactName?.toLowerCase().includes(query)
+      g.rep.phoneNumber.toLowerCase().includes(query) ||
+      g.rep.contactName?.toLowerCase().includes(query)
     );
   });
 
@@ -221,36 +251,27 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
     )}>
       <div className="p-4 border-b border-border bg-background">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-foreground">Conversaciones</h1>
-            {isPolling && (
-              <div
-                className="h-2 w-2 rounded-full bg-green-500 animate-pulse"
-                title="Actualizando"
-              />
-            )}
+          <div className="flex items-center gap-3">
+            <ViewSwitcher active="inbox" />
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-semibold text-foreground">Conversaciones</h1>
+              {isPolling && (
+                <div
+                  className="h-2 w-2 rounded-full bg-green-500 animate-pulse"
+                  title="Actualizando"
+                />
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:bg-muted/30"
-            >
-              <Link href="/kanban" title="Vista CRM (Kanban)">
-                <LayoutGrid className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:bg-muted/30"
-            >
-              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-            </Button>
-          </div>
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:bg-muted/30"
+          >
+            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+          </Button>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -288,60 +309,56 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       </div>
 
       <ScrollArea className="flex-1 h-0 overflow-hidden">
-        {filteredConversations.length === 0 ? (
+        {filteredGroups.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground">
             {searchQuery ? 'No se encontraron conversaciones' : 'Sin conversaciones'}
           </div>
         ) : (
           <div className="w-full overflow-hidden">
-          {filteredConversations.map((conversation) => (
+          {filteredGroups.map(({ rep, all, count }) => (
             <button
-              key={conversation.id}
-              onClick={() => onSelectConversation(conversation)}
+              key={rep.phoneNumber || rep.id}
+              onClick={() => onSelectConversation(rep, all)}
+              onMouseEnter={() => prefetchMessages(rep.id)}
               className={cn(
                 'w-full p-3 pr-4 border-b border-border hover:bg-background text-left transition-colors relative overflow-hidden',
-                selectedConversationId === conversation.id && 'bg-background'
+                selectedConversationId === rep.id && 'bg-background'
               )}
             >
               <div className="flex gap-3 items-start overflow-hidden">
                 <Avatar className="h-12 w-12 flex-shrink-0">
                   <AvatarFallback className="bg-muted text-foreground text-sm font-medium">
-                    {getAvatarInitials(conversation.contactName, conversation.phoneNumber)}
+                    {getAvatarInitials(rep.contactName, rep.phoneNumber)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 flex justify-between items-start gap-4 overflow-hidden">
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center gap-1.5">
                       <p className="font-medium text-foreground truncate">
-                        {conversation.contactName || conversation.phoneNumber}
+                        {rep.contactName || rep.phoneNumber}
                       </p>
-                      {workflowStatusMap.get(conversation.id) === 'running' && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-green-50 text-green-700 border-green-200 flex-shrink-0">
-                          Workflow
-                        </Badge>
+                      {count > 1 && (
+                        <span
+                          className="flex-shrink-0 inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 text-[10px] font-medium text-muted-foreground"
+                          title={`${count} conversaciones de este contacto`}
+                        >
+                          <MessagesSquare className="h-2.5 w-2.5" />
+                          {count}
+                        </span>
                       )}
-                      {workflowStatusMap.get(conversation.id) === 'handoff' && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-orange-50 text-orange-700 border-orange-200 flex-shrink-0">
-                          Handoff
-                        </Badge>
-                      )}
-                      {workflowStatusMap.get(conversation.id) === 'waiting' && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-yellow-50 text-yellow-700 border-yellow-200 flex-shrink-0">
-                          En espera
-                        </Badge>
-                      )}
+                      <AssignmentBadge workflowStatus={workflowStatusMap.get(rep.id)} />
                     </div>
-                    {conversation.lastMessage && (
+                    {rep.lastMessage && (
                       <p className="text-sm text-muted-foreground truncate mt-0.5">
-                        {conversation.lastMessage.direction === 'outbound' && (
+                        {rep.lastMessage.direction === 'outbound' && (
                           <span className="text-[#53bdeb]">✓ </span>
                         )}
-                        {conversation.lastMessage.content}
+                        {rep.lastMessage.content}
                       </p>
                     )}
                   </div>
                   <span className="text-xs text-muted-foreground flex-shrink-0 mt-0.5 ml-4">
-                    {formatConversationDate(conversation.lastActiveAt)}
+                    {formatConversationDate(rep.lastActiveAt)}
                   </span>
                 </div>
               </div>

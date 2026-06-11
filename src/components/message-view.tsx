@@ -20,6 +20,8 @@ type Message = {
   direction: 'inbound' | 'outbound';
   content: string;
   createdAt: string;
+  /** Conversación de origen (modo historial unificado). */
+  conversationId?: string;
   status?: string;
   phoneNumber: string;
   hasMedia: boolean;
@@ -117,6 +119,14 @@ type WorkflowExecution = {
   status: string;
 };
 
+// Conversación del contacto para el modo historial unificado. Deben venir
+// ordenadas de más reciente a más antigua; la primera es la principal (a la que
+// se envían los mensajes nuevos).
+type ContactConversation = {
+  id: string;
+  lastActiveAt?: string;
+};
+
 type Props = {
   conversationId?: string;
   phoneNumber?: string;
@@ -129,6 +139,8 @@ type Props = {
   onToggleInfo?: () => void;
   workflowExecution?: WorkflowExecution | null;
   onWorkflowAction?: () => void;
+  /** Si se provee, muestra el historial unificado de todas estas conversaciones. */
+  contactConversations?: ContactConversation[];
 };
 
 // Module-level cache: persists across re-renders and conversation switches
@@ -161,6 +173,17 @@ async function fetchAndCacheMessages(conversationId: string): Promise<Message[]>
   return sorted;
 }
 
+// Mensajes de una conversación etiquetados con su conversationId (para el modo
+// historial unificado, donde se concatenan varias conversaciones del contacto).
+async function fetchTaggedMessages(conversationId: string): Promise<Message[]> {
+  const response = await fetch(`/api/messages/${conversationId}`);
+  const data = await response.json();
+  return processMessages(data.data || []).map((m) => ({ ...m, conversationId }));
+}
+
+// Cuántas conversaciones del contacto se cargan por página (modo unificado).
+const HISTORY_PAGE_SIZE = 5;
+
 /**
  * Precarga los mensajes de una conversación en el caché (ej. on hover) para que
  * al abrir el chat aparezcan al instante. No-op si ya están cacheados.
@@ -174,7 +197,7 @@ export async function prefetchMessages(conversationId: string): Promise<void> {
   }
 }
 
-export function MessageView({ conversationId, phoneNumber, contactName, onTemplateSent, onBack, isVisible = false, conversationStatus, onStatusChange, onToggleInfo, workflowExecution, onWorkflowAction }: Props) {
+export function MessageView({ conversationId, phoneNumber, contactName, onTemplateSent, onBack, isVisible = false, conversationStatus, onStatusChange, onToggleInfo, workflowExecution, onWorkflowAction, contactConversations }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -192,6 +215,13 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previousMessageCountRef = useRef(0);
   const [workflowActionLoading, setWorkflowActionLoading] = useState(false);
+
+  // Modo historial unificado (varias conversaciones del contacto en un scroll).
+  const isUnified = !!(contactConversations && contactConversations.length > 0);
+  const totalConversations = contactConversations?.length ?? 0;
+  const [loadedCount, setLoadedCount] = useState(HISTORY_PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const hasMoreConversations = isUnified && loadedCount < totalConversations;
 
   const isWorkflowRunning = workflowExecution?.status === 'running';
   const isWorkflowHandoff = workflowExecution?.status === 'handoff';
@@ -233,30 +263,74 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
     if (!conversationId) return;
 
     try {
-      const sortedMessages = await fetchAndCacheMessages(conversationId);
-      setMessages(sortedMessages);
-      previousMessageCountRef.current = sortedMessages.length;
+      if (contactConversations && contactConversations.length > 0) {
+        // Historial unificado: combinar las primeras `loadedCount` conversaciones
+        // (las más recientes) en un solo hilo ordenado cronológicamente.
+        const ids = contactConversations.slice(0, loadedCount).map((c) => c.id);
+        const results = await Promise.all(ids.map(fetchTaggedMessages));
+        const combined = results
+          .flat()
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        setMessages(combined);
+        previousMessageCountRef.current = combined.length;
+      } else {
+        const sortedMessages = await fetchAndCacheMessages(conversationId);
+        setMessages(sortedMessages);
+        previousMessageCountRef.current = sortedMessages.length;
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [conversationId]);
+  }, [conversationId, contactConversations, loadedCount]);
 
+  // Ref a fetchMessages para usarlo en efectos sin re-disparar por su identidad.
+  const fetchMessagesRef = useRef(fetchMessages);
+  useEffect(() => {
+    fetchMessagesRef.current = fetchMessages;
+  }, [fetchMessages]);
+
+  // Carga inicial (montaje o cambio de conversación/contacto).
   useEffect(() => {
     if (!conversationId) return;
+    if (isUnified) {
+      setLoading(true);
+      fetchMessagesRef.current();
+      return;
+    }
     const cached = messageCache.get(conversationId);
     if (cached && cached.length > 0) {
       // Show cached messages instantly, fetch fresh in background
       setMessages(cached);
       setLoading(false);
-      fetchMessages();
+      fetchMessagesRef.current();
     } else {
       setLoading(true);
-      fetchMessages();
+      fetchMessagesRef.current();
     }
-  }, [conversationId, fetchMessages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, isUnified]);
+
+  // Cargar conversaciones anteriores: sin skeleton, preservando la posición de
+  // scroll (el contenido nuevo se agrega arriba).
+  const prevLoadedRef = useRef(loadedCount);
+  useEffect(() => {
+    if (loadedCount === prevLoadedRef.current) return;
+    prevLoadedRef.current = loadedCount;
+    const viewport = messagesContainerRef.current?.querySelector(
+      '[data-radix-scroll-area-viewport]',
+    ) as HTMLElement | null;
+    const prevHeight = viewport?.scrollHeight ?? 0;
+    setLoadingMore(true);
+    fetchMessagesRef.current().finally(() => {
+      setLoadingMore(false);
+      requestAnimationFrame(() => {
+        if (viewport) viewport.scrollTop += viewport.scrollHeight - prevHeight;
+      });
+    });
+  }, [loadedCount]);
 
   useEffect(() => {
     // Only auto-scroll if user is near bottom
@@ -269,30 +343,34 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
     setCanSendRegularMessage(isWithin24HourWindow(messages));
   }, [messages]);
 
-  // Track if user is near bottom of scroll
+  // Track if user is near bottom of scroll.
+  // Depende de `loading`: el ScrollArea real solo existe cuando !loading, así que
+  // hay que (re)enganchar el listener al terminar la carga, no solo al montar
+  // (si no, isNearBottom queda fijo en true y el auto-scroll tira al fondo).
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
 
-    const handleScroll = () => {
-      const viewport = container.querySelector('[data-radix-scroll-area-viewport]');
-      if (!viewport) return;
+    const viewport = container.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
 
+    const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = viewport;
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
       setIsNearBottom(distanceFromBottom < 100);
     };
 
-    const viewport = container.querySelector('[data-radix-scroll-area-viewport]');
-    if (viewport) {
-      viewport.addEventListener('scroll', handleScroll);
-      return () => viewport.removeEventListener('scroll', handleScroll);
-    }
-  }, []);
+    viewport.addEventListener('scroll', handleScroll);
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [loading]);
 
   const handleRefresh = () => {
     setRefreshing(true);
     fetchMessages();
+  };
+
+  const handleLoadEarlier = () => {
+    setLoadedCount((n) => Math.min(n + HISTORY_PAGE_SIZE, totalConversations));
   };
 
   const handleToggleStatus = async () => {
@@ -521,15 +599,50 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
 
       <ScrollArea ref={messagesContainerRef} className="flex-1 h-0 p-4">
         <div className="max-w-[900px] mx-auto">
+        {/* Historial unificado: control para traer conversaciones anteriores */}
+        {isUnified && hasMoreConversations && (
+          <div className="flex justify-center my-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLoadEarlier}
+              disabled={loadingMore}
+              className="text-xs"
+            >
+              <RefreshCw className={cn('h-3.5 w-3.5 mr-1.5', loadingMore && 'animate-spin')} />
+              {loadingMore ? 'Cargando…' : 'Cargar conversaciones anteriores'}
+            </Button>
+          </div>
+        )}
+        {isUnified && !hasMoreConversations && !loadingMore && messages.length > 0 && (
+          <p className="text-center text-xs text-muted-foreground my-3">
+            Inicio del historial del contacto
+          </p>
+        )}
         {messages.length === 0 ? (
           <p className="text-center text-muted-foreground">Inicio del historial</p>
         ) : (
           messages.map((message, index) => {
             const prevMessage = index > 0 ? messages[index - 1] : null;
-            const showDateDivider = shouldShowDateDivider(message, prevMessage);
+            const showConversationDivider =
+              isUnified && message.conversationId !== prevMessage?.conversationId;
+            const showDateDivider =
+              shouldShowDateDivider(message, prevMessage) || showConversationDivider;
 
             return (
               <div key={message.id}>
+                {showConversationDivider && (
+                  <div className="flex items-center gap-2 mt-5 mb-1">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                      {message.conversationId === conversationId && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      )}
+                      Conversación {message.conversationId?.slice(0, 8)}
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                )}
                 {showDateDivider && (
                   <div className="flex justify-center my-4">
                     <Badge variant="secondary" className="shadow-sm">

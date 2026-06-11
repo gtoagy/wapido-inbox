@@ -1,13 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
 import { MessageView } from '@/components/message-view';
+import { ViewSwitcher } from '@/components/view-switcher';
 import { KanbanColumn } from './kanban-column';
 import type { KanbanConversation } from './conversation-card';
 import {
@@ -27,6 +27,12 @@ type ApiConversation = {
 
 type WorkflowExecution = { id: string; status: string };
 
+function msTime(value?: string): number {
+  if (!value) return 0;
+  const t = new Date(value).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
 export function KanbanBoard() {
   const [stages] = useState<PipelineStage[]>(DEFAULT_STAGES);
   const [conversations, setConversations] = useState<ApiConversation[]>([]);
@@ -35,7 +41,9 @@ export function KanbanBoard() {
   // Overrides locales de etapa por drag & drop (Fase 1, en memoria).
   const [stageOverrides, setStageOverrides] = useState<Record<string, string>>({});
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [activeConversation, setActiveConversation] = useState<KanbanConversation | null>(null);
+  // Chat abierto: todas las conversaciones del contacto (la primera es la más
+  // reciente = la principal a la que se envían mensajes nuevos).
+  const [activeContactConvs, setActiveContactConvs] = useState<ApiConversation[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -112,43 +120,77 @@ export function KanbanBoard() {
     fetchConversations();
   };
 
-  const handleDrop = (conversationId: string, stageId: string) => {
-    setStageOverrides((prev) => ({ ...prev, [conversationId]: stageId }));
+  const handleDrop = (groupKey: string, stageId: string) => {
+    setStageOverrides((prev) => ({ ...prev, [groupKey]: stageId }));
     setDraggingId(null);
   };
 
-  // Agrupamos conversaciones por etapa: override local si existe, si no la
-  // asignación determinística mock.
+  // Al abrir una tarjeta: cargamos TODAS las conversaciones del contacto
+  // (ordenadas de más reciente a más antigua) y mostramos la más reciente.
+  const handleCardClick = useCallback(
+    (card: KanbanConversation) => {
+      const convs = conversations
+        .filter((c) => (c.phoneNumber || c.id) === card.groupKey)
+        .sort((a, b) => msTime(b.lastActiveAt) - msTime(a.lastActiveAt));
+      setActiveContactConvs(convs.length ? convs : null);
+    },
+    [conversations],
+  );
+
+  const closeChat = () => setActiveContactConvs(null);
+
+  // Agrupamos por contacto y luego por etapa.
   const conversationsByStage = useMemo(() => {
     const grouped: Record<string, KanbanConversation[]> = {};
     for (const stage of stages) grouped[stage.id] = [];
 
+    // 1) Agrupar conversaciones por contacto (teléfono).
+    const byContact = new Map<string, ApiConversation[]>();
     for (const conv of conversations) {
-      const stageId = stageOverrides[conv.id] ?? defaultStageForConversation(conv.id, stages);
+      const key = conv.phoneNumber || conv.id;
+      const arr = byContact.get(key);
+      if (arr) arr.push(conv);
+      else byContact.set(key, [conv]);
+    }
+
+    // 2) Una tarjeta por contacto: la conversación más reciente es la
+    // representativa (la que se abre al hacer clic). El stage se asigna por
+    // contacto (groupKey) para que sea estable aunque cambie la representativa.
+    for (const [groupKey, convs] of byContact) {
+      const sorted = convs
+        .slice()
+        .sort((a, b) => msTime(b.lastActiveAt) - msTime(a.lastActiveAt));
+      const rep = sorted[0];
+      const stageId = stageOverrides[groupKey] ?? defaultStageForConversation(groupKey, stages);
       if (!grouped[stageId]) continue;
       grouped[stageId].push({
-        id: conv.id,
-        phoneNumber: conv.phoneNumber,
-        contactName: conv.contactName,
-        status: conv.status,
-        lastActiveAt: conv.lastActiveAt,
-        lastMessage: conv.lastMessage,
-        workflowStatus: workflowMap.get(conv.id)?.status,
+        id: rep.id,
+        groupKey,
+        count: convs.length,
+        phoneNumber: rep.phoneNumber,
+        contactName: rep.contactName,
+        status: rep.status,
+        lastActiveAt: rep.lastActiveAt,
+        lastMessage: rep.lastMessage,
+        workflowStatus: workflowMap.get(rep.id)?.status,
       });
     }
     return grouped;
   }, [conversations, stages, stageOverrides, workflowMap]);
+
+  const contactCount = useMemo(
+    () => new Set(conversations.map((c) => c.phoneNumber || c.id)).size,
+    [conversations],
+  );
+
+  const mainConv = activeContactConvs?.[0] ?? null;
 
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
       <header className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
         <div className="flex items-center gap-3">
-          <Button asChild variant="ghost" size="icon" className="text-muted-foreground">
-            <Link href="/" title="Volver al inbox">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
+          <ViewSwitcher active="kanban" />
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-foreground">CRM</h1>
             {isPolling && (
@@ -156,7 +198,7 @@ export function KanbanBoard() {
             )}
           </div>
           <span className="text-sm text-muted-foreground">
-            {conversations.length} conversaciones
+            {contactCount} contactos · {conversations.length} chats
           </span>
         </div>
         <Button
@@ -195,33 +237,31 @@ export function KanbanBoard() {
                 onDragStart={setDraggingId}
                 onDragEnd={() => setDraggingId(null)}
                 onDropConversation={handleDrop}
-                onCardClick={setActiveConversation}
+                onCardClick={handleCardClick}
               />
             ))}
         </div>
       )}
 
       {/* Panel deslizante con el chat — se abre al hacer clic en una tarjeta */}
-      {activeConversation && (
+      {activeContactConvs && mainConv && (
         <>
-          <div
-            className="fixed inset-0 z-40 bg-black/30"
-            onClick={() => setActiveConversation(null)}
-          />
+          <div className="fixed inset-0 z-40 bg-black/30" onClick={closeChat} />
           <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[480px] bg-card shadow-2xl">
             <MessageView
-              key={activeConversation.id}
-              conversationId={activeConversation.id}
-              phoneNumber={activeConversation.phoneNumber}
-              contactName={activeConversation.contactName}
-              conversationStatus={activeConversation.status}
+              key={mainConv.id}
+              conversationId={mainConv.id}
+              contactConversations={activeContactConvs}
+              phoneNumber={mainConv.phoneNumber}
+              contactName={mainConv.contactName}
+              conversationStatus={mainConv.status}
               isVisible
-              onBack={() => setActiveConversation(null)}
+              onBack={closeChat}
               onStatusChange={fetchConversations}
               onTemplateSent={async () => {
                 await fetchConversations();
               }}
-              workflowExecution={workflowMap.get(activeConversation.id) ?? null}
+              workflowExecution={workflowMap.get(mainConv.id) ?? null}
               onWorkflowAction={() => fetchWorkflowStatuses()}
             />
           </div>
