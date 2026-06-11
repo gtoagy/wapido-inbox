@@ -131,6 +131,49 @@ type Props = {
   onWorkflowAction?: () => void;
 };
 
+// Module-level cache: persists across re-renders and conversation switches
+const messageCache = new Map<string, Message[]>();
+
+// Pure: ordena mensajes y adjunta reacciones. A nivel módulo para reusarse
+// tanto en el componente como en el prefetch.
+function processMessages(raw: Message[]): Message[] {
+  const reactions = raw.filter((msg: Message) => msg.messageType === 'reaction');
+  const regularMessages = raw.filter((msg: Message) => msg.messageType !== 'reaction');
+  const reactionMap = new Map<string, string>();
+  reactions.forEach((reaction: Message) => {
+    if (reaction.reactedToMessageId && reaction.reactionEmoji) {
+      reactionMap.set(reaction.reactedToMessageId, reaction.reactionEmoji);
+    }
+  });
+  return regularMessages
+    .map((msg: Message) => {
+      const reaction = reactionMap.get(msg.id);
+      return reaction ? { ...msg, reactionEmoji: reaction } : msg;
+    })
+    .sort((a: Message, b: Message) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+}
+
+async function fetchAndCacheMessages(conversationId: string): Promise<Message[]> {
+  const response = await fetch(`/api/messages/${conversationId}`);
+  const data = await response.json();
+  const sorted = processMessages(data.data || []);
+  messageCache.set(conversationId, sorted);
+  return sorted;
+}
+
+/**
+ * Precarga los mensajes de una conversación en el caché (ej. on hover) para que
+ * al abrir el chat aparezcan al instante. No-op si ya están cacheados.
+ */
+export async function prefetchMessages(conversationId: string): Promise<void> {
+  if (!conversationId || messageCache.has(conversationId)) return;
+  try {
+    await fetchAndCacheMessages(conversationId);
+  } catch {
+    // best-effort: si falla, el fetch normal al abrir lo reintenta
+  }
+}
+
 export function MessageView({ conversationId, phoneNumber, contactName, onTemplateSent, onBack, isVisible = false, conversationStatus, onStatusChange, onToggleInfo, workflowExecution, onWorkflowAction }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -190,31 +233,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
     if (!conversationId) return;
 
     try {
-      const response = await fetch(`/api/messages/${conversationId}`);
-      const data = await response.json();
-
-      // Separate reactions from regular messages
-      const reactions = (data.data || []).filter((msg: Message) => msg.messageType === 'reaction');
-      const regularMessages = (data.data || []).filter((msg: Message) => msg.messageType !== 'reaction');
-
-      // Create a map of message ID to reaction emoji
-      const reactionMap = new Map<string, string>();
-      reactions.forEach((reaction: Message) => {
-        if (reaction.reactedToMessageId && reaction.reactionEmoji) {
-          reactionMap.set(reaction.reactedToMessageId, reaction.reactionEmoji);
-        }
-      });
-
-      // Attach reactions to their corresponding messages
-      const messagesWithReactions = regularMessages.map((msg: Message) => {
-        const reaction = reactionMap.get(msg.id);
-        return reaction ? { ...msg, reactionEmoji: reaction } : msg;
-      });
-
-      const sortedMessages = messagesWithReactions.sort((a: Message, b: Message) => {
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      });
-
+      const sortedMessages = await fetchAndCacheMessages(conversationId);
       setMessages(sortedMessages);
       previousMessageCountRef.current = sortedMessages.length;
     } catch (error) {
@@ -226,7 +245,14 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
   }, [conversationId]);
 
   useEffect(() => {
-    if (conversationId) {
+    if (!conversationId) return;
+    const cached = messageCache.get(conversationId);
+    if (cached && cached.length > 0) {
+      // Show cached messages instantly, fetch fresh in background
+      setMessages(cached);
+      setLoading(false);
+      fetchMessages();
+    } else {
       setLoading(true);
       fetchMessages();
     }
@@ -288,9 +314,10 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
     }
   };
 
-  // Auto-polling for messages (every 5 seconds)
+  // Auto-polling for messages (every 3 seconds) — el chat abierto se siente
+  // más vivo; solo hay un MessageView montado a la vez.
   useAutoPolling({
-    interval: 5000,
+    interval: 3000,
     enabled: !!conversationId,
     onPoll: fetchMessages
   });

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle, useCallback, useRef } from 'react';
 import { format, isValid, isToday, isYesterday } from 'date-fns';
-import { RefreshCw, Search } from 'lucide-react';
+import Link from 'next/link';
+import { LayoutGrid, RefreshCw, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
 import { Button } from '@/components/ui/button';
@@ -78,10 +79,17 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('active');
   const [workflowStatusMap, setWorkflowStatusMap] = useState<Map<string, string>>(new Map());
 
-  const fetchWorkflowStatuses = useCallback(async (convs: Conversation[]) => {
+  const conversationsRef = useRef<Conversation[]>([]);
+
+  const fetchWorkflowStatuses = useCallback(async (convs?: Conversation[]) => {
+    const target = convs ?? conversationsRef.current;
+    // Only check active conversations — ended ones won't have running workflows
+    const activeConvs = target.filter(c => c.status === 'active');
+    if (activeConvs.length === 0) return;
+
     const newMap = new Map<string, string>();
     await Promise.allSettled(
-      convs.map(async (conv) => {
+      activeConvs.map(async (conv) => {
         try {
           const res = await fetch(`/api/conversations/${conv.id}/workflow`);
           const data = await res.json();
@@ -105,7 +113,9 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
       const response = await fetch(`/api/conversations${params}`);
       const data = await response.json();
-      setConversations(data.data || []);
+      const convs = data.data || [];
+      conversationsRef.current = convs;
+      setConversations(convs);
     } catch (error) {
       console.error('Error fetching conversations:', error);
     } finally {
@@ -114,12 +124,16 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
     }
   }, [statusFilter]);
 
+  // Initial load
   useEffect(() => {
     fetchConversations();
   }, [fetchConversations]);
 
+  // Fetch workflow statuses once on mount (after first conversations load)
+  const didInitWorkflow = useRef(false);
   useEffect(() => {
-    if (conversations.length > 0) {
+    if (conversations.length > 0 && !didInitWorkflow.current) {
+      didInitWorkflow.current = true;
       fetchWorkflowStatuses(conversations);
     }
   }, [conversations, fetchWorkflowStatuses]);
@@ -129,11 +143,18 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
     fetchConversations();
   };
 
-  // Auto-polling for conversations (every 10 seconds)
+  // Auto-polling for conversations (every 15 seconds)
   const { isPolling } = useAutoPolling({
-    interval: 10000,
+    interval: 15000,
     enabled: true,
     onPoll: fetchConversations
+  });
+
+  // Separate slower polling for workflow statuses (every 60 seconds)
+  useAutoPolling({
+    interval: 60000,
+    enabled: true,
+    onPoll: () => fetchWorkflowStatuses()
   });
 
   const selectByPhoneNumber = (phoneNumber: string) => {
@@ -209,15 +230,27 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               />
             )}
           </div>
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:bg-muted/30"
-          >
-            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:bg-muted/30"
+            >
+              <Link href="/kanban" title="Vista CRM (Kanban)">
+                <LayoutGrid className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:bg-muted/30"
+            >
+              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            </Button>
+          </div>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
