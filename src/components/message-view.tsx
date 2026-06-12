@@ -542,7 +542,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
               </Button>
             )}
             <div className="flex-1 min-w-0">
-              <h2 className="text-base font-medium text-foreground truncate">{contactName || phoneNumber || 'Conversación'}</h2>
+              <h2 className="text-sm font-semibold text-foreground truncate">{contactName || phoneNumber || 'Conversación'}</h2>
               {contactName && phoneNumber && (
                 <p className="text-xs text-muted-foreground truncate">{phoneNumber}</p>
               )}

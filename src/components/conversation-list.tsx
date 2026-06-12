@@ -232,7 +232,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
         <div className="flex-1 p-3 space-y-3">
           {[1, 2, 3, 4, 5, 6, 7].map((i) => (
             <div key={i} className="flex gap-3 p-3">
-              <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
+              <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-3 w-48" />
@@ -254,7 +254,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
           <div className="flex items-center gap-3">
             <ViewSwitcher active="inbox" />
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold text-foreground">Conversaciones</h1>
+              <h1 className="text-2xl font-bold text-foreground">Conversaciones</h1>
               {isPolling && (
                 <div
                   className="h-2 w-2 rounded-full bg-success animate-pulse"
@@ -326,15 +326,15 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               )}
             >
               <div className="flex gap-3 items-start overflow-hidden">
-                <Avatar className="h-12 w-12 flex-shrink-0">
-                  <AvatarFallback className="bg-muted text-foreground text-sm font-medium">
+                <Avatar className="h-10 w-10 flex-shrink-0">
+                  <AvatarFallback className="bg-muted text-foreground text-xs font-medium">
                     {getAvatarInitials(rep.contactName, rep.phoneNumber)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 flex justify-between items-start gap-4 overflow-hidden">
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center gap-1.5">
-                      <p className="font-medium text-foreground truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {rep.contactName || rep.phoneNumber}
                       </p>
                       {count > 1 && (
@@ -349,7 +349,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                       <AssignmentBadge workflowStatus={workflowStatusMap.get(rep.id)} />
                     </div>
                     {rep.lastMessage && (
-                      <p className="text-sm text-muted-foreground truncate mt-0.5">
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {rep.lastMessage.direction === 'outbound' && (
                           <span className="text-muted-foreground">✓ </span>
                         )}

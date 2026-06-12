@@ -171,7 +171,7 @@ export function TemplateSelectorDialog({ open, onOpenChange, phoneNumber, onTemp
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-foreground truncate">
+                      <h3 className="text-sm font-medium text-foreground truncate">
                         {template.name}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">

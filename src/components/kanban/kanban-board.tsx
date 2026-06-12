@@ -192,7 +192,7 @@ export function KanbanBoard() {
         <div className="flex items-center gap-x-3 gap-y-1 min-w-0 flex-wrap">
           <ViewSwitcher active="kanban" />
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-foreground">CRM</h1>
+            <h1 className="text-2xl font-bold text-foreground">CRM</h1>
             {isPolling && (
               <div className="h-2 w-2 rounded-full bg-success animate-pulse" title="Actualizando" />
             )}
