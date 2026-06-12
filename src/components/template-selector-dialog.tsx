@@ -126,13 +126,13 @@ export function TemplateSelectorDialog({ open, onOpenChange, phoneNumber, onTemp
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'MARKETING':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-info-light text-info';
       case 'UTILITY':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success-light text-success';
       case 'AUTHENTICATION':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -148,7 +148,7 @@ export function TemplateSelectorDialog({ open, onOpenChange, phoneNumber, onTemp
         </DialogHeader>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+          <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
             {error}
           </div>
         )}

@@ -58,7 +58,7 @@ export function InfoPanel({
               className={cn(
                 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
                 isActive
-                  ? 'bg-green-500/10 text-green-600'
+                  ? 'bg-success-light text-success'
                   : 'bg-muted text-muted-foreground'
               )}
             >

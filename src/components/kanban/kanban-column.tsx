@@ -8,6 +8,8 @@ import { STAGE_ACCENTS, type PipelineStage } from '@/lib/pipeline';
 
 type Props = {
   stage: PipelineStage;
+  /** Todas las etapas del pipeline (para el menú "Mover a etapa" de las tarjetas). */
+  allStages: PipelineStage[];
   conversations: KanbanConversation[];
   draggingId: string | null;
   onDragStart: (id: string) => void;
@@ -18,6 +20,7 @@ type Props = {
 
 export function KanbanColumn({
   stage,
+  allStages,
   conversations,
   draggingId,
   onDragStart,
@@ -29,14 +32,19 @@ export function KanbanColumn({
   const accent = STAGE_ACCENTS[stage.color];
 
   return (
-    <div className="flex w-80 flex-shrink-0 flex-col rounded-xl bg-muted/40">
+    <div className="flex w-[85vw] max-w-80 md:w-80 flex-shrink-0 snap-center md:snap-align-none flex-col rounded-xl bg-muted/40">
       {/* Header de la columna */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border/60">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={cn('h-2.5 w-2.5 rounded-full flex-shrink-0', accent.dot)} />
-          <h3 className={cn('text-sm font-semibold truncate', accent.header)}>{stage.name}</h3>
-        </div>
-        <span className="text-xs font-medium text-muted-foreground bg-card rounded-full px-2 py-0.5 flex-shrink-0">
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border/60">
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium min-w-0',
+            accent.pill,
+          )}
+        >
+          <span className={cn('h-2 w-2 rounded-full flex-shrink-0', accent.dot)} />
+          <span className="truncate">{stage.name}</span>
+        </span>
+        <span className="text-sm font-medium text-muted-foreground flex-shrink-0">
           {conversations.length}
         </span>
       </div>
@@ -73,6 +81,9 @@ export function KanbanColumn({
                   onDragStart={onDragStart}
                   onDragEnd={onDragEnd}
                   onClick={onCardClick}
+                  stages={allStages}
+                  currentStageId={stage.id}
+                  onMoveToStage={onDropConversation}
                 />
               ))
             )}

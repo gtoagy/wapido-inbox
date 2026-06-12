@@ -1,9 +1,20 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
 export const metadata: Metadata = {
-  title: "WhatsApp inbox",
-  description: "A simple WhatsApp inbox built with Next.js",
+  title: "Wapido — Inbox",
+  description: "Bandeja de conversaciones de WhatsApp de Wapido",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -12,8 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">
+    <html lang="es" className={inter.variable}>
+      <body className="font-sans antialiased">
         {children}
       </body>
     </html>

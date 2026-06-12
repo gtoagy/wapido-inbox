@@ -480,7 +480,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
   if (loading) {
     return (
       <div className={cn(
-        "flex-1 flex flex-col bg-[#efeae2]",
+        "flex-1 flex flex-col bg-chat-surface",
         !isVisible && "hidden md:flex"
       )}>
         <div className="p-3 border-b border-border bg-background">
@@ -525,7 +525,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
 
   return (
     <div className={cn(
-      "flex-1 flex flex-col bg-[#efeae2]",
+      "flex-1 flex flex-col bg-chat-surface",
       !isVisible && "hidden md:flex"
     )}>
       <div className="p-3 border-b border-border bg-background">
@@ -558,7 +558,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                 "text-xs",
                 conversationStatus === 'ended'
                   ? "text-primary hover:bg-primary/10"
-                  : "text-red-500 hover:bg-red-50"
+                  : "text-destructive hover:bg-destructive/10"
               )}
             >
               {conversationStatus === 'ended' ? (
@@ -636,7 +636,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                     <div className="h-px flex-1 bg-border" />
                     <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                       {message.conversationId === conversationId && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-success" />
                       )}
                       Conversación {message.conversationId?.slice(0, 8)}
                     </span>
@@ -661,8 +661,8 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                     className={cn(
                       'max-w-[70%] rounded-lg px-3 py-2 relative shadow-sm',
                       message.direction === 'outbound'
-                        ? 'bg-[var(--whatsapp-bubble-outgoing)] text-foreground rounded-br-none'
-                        : 'bg-card text-foreground rounded-bl-none'
+                        ? 'bg-bubble-outgoing text-bubble-outgoing-foreground rounded-br-none'
+                        : 'bg-bubble-incoming text-bubble-incoming-foreground rounded-bl-none'
                     )}
                   >
                     {message.hasMedia && message.mediaData?.url ? (
@@ -739,9 +739,12 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
                       {message.direction === 'outbound' && message.status && (
                         <>
                           {message.status === 'failed' ? (
-                            <XCircle className="h-3.5 w-3.5 text-red-500" />
+                            <XCircle className="h-3.5 w-3.5 text-destructive" />
                           ) : (
-                            <span className="text-xs text-[#53bdeb]">
+                            <span className={cn(
+                              "text-xs",
+                              message.status === 'read' ? "text-info" : "text-muted-foreground"
+                            )}>
                               {message.status === 'read' ? '✓✓' :
                                message.status === 'delivered' ? '✓✓' :
                                message.status === 'sent' ? '✓' : ''}
@@ -753,7 +756,7 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
 
                     {message.direction === 'outbound' && message.status === 'failed' && (
                       <div className="mt-1">
-                        <span className="text-[11px] text-red-500 flex items-center gap-1">
+                        <span className="text-[11px] text-destructive flex items-center gap-1">
                           No entregado
                         </span>
                       </div>
@@ -777,18 +780,18 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
       {showWorkflowBanner && (
         <div className={cn(
           "border-t border-border px-4 py-2",
-          isWorkflowHandoff ? "bg-yellow-500/10" : "bg-muted"
+          isWorkflowHandoff ? "bg-warning-light" : "bg-muted"
         )}>
           <div className="max-w-[900px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
               {isWorkflowHandoff ? (
-                <AlertCircle className="h-4 w-4 text-yellow-700 flex-shrink-0" />
+                <AlertCircle className="h-4 w-4 text-warning flex-shrink-0" />
               ) : (
                 <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               )}
               <span className={cn(
                 "text-sm font-medium",
-                isWorkflowHandoff ? "text-yellow-700" : "text-muted-foreground"
+                isWorkflowHandoff ? "text-warning" : "text-muted-foreground"
               )}>
                 {isWorkflowRunning && "Workflow activo"}
                 {isWorkflowHandoff && "Modo manual — el workflow esta pausado"}
@@ -900,9 +903,9 @@ export function MessageView({ conversationId, phoneNumber, contactName, onTempla
           </>
         ) : (
           <div className="p-3 max-w-[900px] mx-auto w-full">
-            <div className="bg-[#fff4cc] border border-[#e9c46a] rounded-lg p-4">
+            <div className="bg-warning-light border border-warning/40 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-[#8b7000] flex-shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground mb-3">
                     {getDisabledInputMessage(messages)}

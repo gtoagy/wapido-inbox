@@ -257,7 +257,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               <h1 className="text-xl font-semibold text-foreground">Conversaciones</h1>
               {isPolling && (
                 <div
-                  className="h-2 w-2 rounded-full bg-green-500 animate-pulse"
+                  className="h-2 w-2 rounded-full bg-success animate-pulse"
                   title="Actualizando"
                 />
               )}
@@ -351,7 +351,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                     {rep.lastMessage && (
                       <p className="text-sm text-muted-foreground truncate mt-0.5">
                         {rep.lastMessage.direction === 'outbound' && (
-                          <span className="text-[#53bdeb]">✓ </span>
+                          <span className="text-muted-foreground">✓ </span>
                         )}
                         {rep.lastMessage.content}
                       </p>

@@ -72,7 +72,9 @@ export default function Home() {
         contactName={selectedConversation?.contactName}
         onTemplateSent={handleTemplateSent}
         onBack={handleBackToList}
-        isVisible={!!selectedConversation}
+        // En móvil solo se muestra un panel a la vez: si el panel de info está
+        // abierto, el chat se oculta (en desktop conviven via hidden md:flex).
+        isVisible={!!selectedConversation && !showInfoPanel}
         conversationStatus={selectedConversation?.status}
         onStatusChange={handleStatusChange}
         onToggleInfo={() => setShowInfoPanel(prev => !prev)}

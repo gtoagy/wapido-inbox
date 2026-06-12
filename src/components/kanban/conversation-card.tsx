@@ -2,9 +2,19 @@
 
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MessagesSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MessagesSquare, MoreVertical } from 'lucide-react';
 import { prefetchMessages } from '@/components/message-view';
 import { AssignmentBadge } from '@/components/assignment-badge';
+import { STAGE_ACCENTS, type PipelineStage } from '@/lib/pipeline';
 
 export type KanbanConversation = {
   /** Conversación representativa (la más reciente del contacto) — la que se abre. */
@@ -42,9 +52,26 @@ type Props = {
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
   onClick?: (conversation: KanbanConversation) => void;
+  /** Etapas del pipeline para el menú "Mover a etapa" (alternativa táctil al drag). */
+  stages?: PipelineStage[];
+  currentStageId?: string;
+  onMoveToStage?: (groupKey: string, stageId: string) => void;
 };
 
-export function ConversationCard({ conversation, isDragging, onDragStart, onDragEnd, onClick }: Props) {
+export function ConversationCard({
+  conversation,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  onClick,
+  stages,
+  currentStageId,
+  onMoveToStage,
+}: Props) {
+  const moveTargets = stages
+    ?.filter((s) => s.id !== currentStageId)
+    .sort((a, b) => a.position - b.position);
+
   return (
     <div
       draggable
@@ -53,8 +80,8 @@ export function ConversationCard({ conversation, isDragging, onDragStart, onDrag
       onMouseEnter={() => prefetchMessages(conversation.id)}
       onClick={() => onClick?.(conversation)}
       className={cn(
-        'group rounded-lg border border-border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing',
-        'transition-all hover:shadow-md hover:border-primary/30',
+        'group relative rounded-lg border border-border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing',
+        'transition-all hover:shadow-kanban hover:border-primary/30 hover:-translate-y-0.5',
         isDragging && 'opacity-40 ring-2 ring-primary',
       )}
     >
@@ -80,12 +107,50 @@ export function ConversationCard({ conversation, isDragging, onDragStart, onDrag
                 </span>
               )}
             </div>
-            <AssignmentBadge workflowStatus={conversation.workflowStatus} />
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <AssignmentBadge workflowStatus={conversation.workflowStatus} />
+              {onMoveToStage && moveTargets && moveTargets.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="h-6 w-6 -mr-1 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Mover a etapa"
+                    >
+                      <MoreVertical className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuLabel>Mover a etapa</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {moveTargets.map((stage) => (
+                      <DropdownMenuItem
+                        key={stage.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMoveToStage(conversation.groupKey, stage.id);
+                        }}
+                      >
+                        <span
+                          className={cn(
+                            'h-2 w-2 rounded-full flex-shrink-0',
+                            STAGE_ACCENTS[stage.color].dot,
+                          )}
+                        />
+                        {stage.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
           {conversation.lastMessage && (
             <p className="text-xs text-muted-foreground truncate mt-1">
               {conversation.lastMessage.direction === 'outbound' && (
-                <span className="text-[#53bdeb]">✓ </span>
+                <span className="text-muted-foreground">✓ </span>
               )}
               {conversation.lastMessage.content}
             </p>
