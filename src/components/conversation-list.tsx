@@ -251,27 +251,27 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
     )}>
       <div className="p-4 border-b border-border bg-background">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <ViewSwitcher active="inbox" />
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-foreground">Conversaciones</h1>
-              {isPolling && (
-                <div
-                  className="h-2 w-2 rounded-full bg-success animate-pulse"
-                  title="Actualizando"
-                />
-              )}
-            </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-xl font-bold text-foreground truncate">Conversaciones</h1>
+            {isPolling && (
+              <div
+                className="h-2 w-2 rounded-full bg-success animate-pulse flex-shrink-0"
+                title="Actualizando"
+              />
+            )}
           </div>
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:bg-muted/30"
-          >
-            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ViewSwitcher active="inbox" />
+            <Button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:bg-muted/30"
+            >
+              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            </Button>
+          </div>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

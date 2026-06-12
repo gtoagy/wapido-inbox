@@ -190,7 +190,6 @@ export function KanbanBoard() {
       {/* Header */}
       <header className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
         <div className="flex items-center gap-x-3 gap-y-1 min-w-0 flex-wrap">
-          <ViewSwitcher active="kanban" />
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground">CRM</h1>
             {isPolling && (
@@ -201,15 +200,18 @@ export function KanbanBoard() {
             {contactCount} contactos · {conversations.length} chats
           </span>
         </div>
-        <Button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:bg-muted/30"
-        >
-          <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-        </Button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <ViewSwitcher active="kanban" />
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:bg-muted/30"
+          >
+            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+          </Button>
+        </div>
       </header>
 
       {/* Board */}
