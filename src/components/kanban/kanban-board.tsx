@@ -168,27 +168,17 @@ export function KanbanBoard() {
     return grouped;
   }, [conversations, stages, stageOverrides, workflowMap]);
 
-  const contactCount = useMemo(
-    () => new Set(conversations.map((c) => c.phoneNumber || c.id)).size,
-    [conversations],
-  );
-
   const mainConv = activeContactConvs?.[0] ?? null;
 
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
-        <div className="flex items-center gap-x-3 gap-y-1 min-w-0 flex-wrap">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-foreground">CRM</h1>
-            {isPolling && (
-              <div className="h-2 w-2 rounded-full bg-success animate-pulse" title="Actualizando" />
-            )}
-          </div>
-          <span className="text-sm text-muted-foreground hidden sm:inline">
-            {contactCount} contactos · {conversations.length} chats
-          </span>
+      <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground">CRM</h1>
+          {isPolling && (
+            <div className="h-2 w-2 rounded-full bg-success animate-pulse" title="Actualizando" />
+          )}
         </div>
         <div className="flex-shrink-0">
           <ViewSwitcher active="kanban" />
