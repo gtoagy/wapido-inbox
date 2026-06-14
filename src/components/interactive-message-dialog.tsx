@@ -141,7 +141,7 @@ export function InteractiveMessageDialog({
         </DialogHeader>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+          <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
             {error}
           </div>
         )}
@@ -162,7 +162,7 @@ export function InteractiveMessageDialog({
 
           <div className="space-y-2">
             <Label htmlFor="body" className="text-foreground">
-              Cuerpo <span className="text-red-500">*</span>
+              Cuerpo <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="body"
@@ -176,7 +176,7 @@ export function InteractiveMessageDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-foreground">
-                Botones <span className="text-red-500">*</span>
+                Botones <span className="text-destructive">*</span>
               </Label>
               <Button
                 type="button"
@@ -210,7 +210,7 @@ export function InteractiveMessageDialog({
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRemoveButton(index)}
-                      className="h-9 w-9 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     >
                       <X className="h-4 w-4" />
                     </Button>

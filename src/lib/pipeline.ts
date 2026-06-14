@@ -34,16 +34,47 @@ export const DEFAULT_STAGES: PipelineStage[] = [
 // Mapa de color → clases Tailwind para el header/acento de cada columna.
 // Usamos colores planos de Tailwind (no tokens del tema) porque representan
 // categorías arbitrarias definidas por el usuario, no estados semánticos del UI.
+// `pill` sigue el patrón de header de columna del kanban de wapido-front.
 export const STAGE_ACCENTS: Record<
   StageColor,
-  { dot: string; header: string; badge: string }
+  { dot: string; header: string; badge: string; pill: string }
 > = {
-  blue: { dot: 'bg-blue-500', header: 'text-blue-700', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
-  violet: { dot: 'bg-violet-500', header: 'text-violet-700', badge: 'bg-violet-50 text-violet-700 border-violet-200' },
-  amber: { dot: 'bg-amber-500', header: 'text-amber-700', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
-  orange: { dot: 'bg-orange-500', header: 'text-orange-700', badge: 'bg-orange-50 text-orange-700 border-orange-200' },
-  green: { dot: 'bg-green-500', header: 'text-green-700', badge: 'bg-green-50 text-green-700 border-green-200' },
-  slate: { dot: 'bg-slate-400', header: 'text-slate-600', badge: 'bg-slate-50 text-slate-600 border-slate-200' },
+  blue: {
+    dot: 'bg-blue-500',
+    header: 'text-blue-700 dark:text-blue-300',
+    badge: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900',
+    pill: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  },
+  violet: {
+    dot: 'bg-violet-500',
+    header: 'text-violet-700 dark:text-violet-300',
+    badge: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-900',
+    pill: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+  },
+  amber: {
+    dot: 'bg-amber-500',
+    header: 'text-amber-700 dark:text-amber-300',
+    badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900',
+    pill: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  },
+  orange: {
+    dot: 'bg-orange-500',
+    header: 'text-orange-700 dark:text-orange-300',
+    badge: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900',
+    pill: 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
+  },
+  green: {
+    dot: 'bg-green-500',
+    header: 'text-green-700 dark:text-green-300',
+    badge: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-300 dark:border-green-900',
+    pill: 'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300',
+  },
+  slate: {
+    dot: 'bg-slate-400',
+    header: 'text-slate-600 dark:text-slate-300',
+    badge: 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900/60 dark:text-slate-300 dark:border-slate-800',
+    pill: 'bg-slate-50 text-slate-600 dark:bg-slate-900/60 dark:text-slate-300',
+  },
 };
 
 // Hash determinístico simple (djb2) para repartir conversaciones entre etapas

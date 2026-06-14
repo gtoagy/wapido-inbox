@@ -6,8 +6,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -25,6 +25,27 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-light: var(--success-light);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-light: var(--warning-light);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-light: var(--info-light);
+  --color-kanban-received: var(--kanban-received);
+  --color-kanban-received-border: var(--kanban-received-border);
+  --color-kanban-preparing: var(--kanban-preparing);
+  --color-kanban-preparing-border: var(--kanban-preparing-border);
+  --color-kanban-sent: var(--kanban-sent);
+  --color-kanban-sent-border: var(--kanban-sent-border);
+  --color-chat-surface: var(--chat-surface);
+  --color-bubble-outgoing: var(--bubble-outgoing);
+  --color-bubble-outgoing-foreground: var(--bubble-outgoing-foreground);
+  --color-bubble-incoming: var(--bubble-incoming);
+  --color-bubble-incoming-foreground: var(--bubble-incoming-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -41,78 +62,137 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --shadow-card: 0 2px 8px -2px hsl(20 14% 12% / 0.1);
+  --shadow-kanban: 0 4px 12px -2px hsl(20 14% 12% / 0.12);
+  --animate-fade-in: fade-in 0.3s ease-out forwards;
+  --animate-slide-up: slide-up 0.3s ease-out forwards;
+  --animate-scale-in: scale-in 0.2s ease-out forwards;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: #f0f2f5;
-  --foreground: #111b21;
-  --card: #ffffff;
-  --card-foreground: #111b21;
-  --popover: #ffffff;
-  --popover-foreground: #111b21;
-  --primary: #00a884;
-  --primary-foreground: #ffffff;
-  --secondary: #f0f2f5;
-  --secondary-foreground: #111b21;
-  --muted: #f0f2f5;
-  --muted-foreground: #667781;
-  --accent: #f0f2f5;
-  --accent-foreground: #111b21;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #e9edef;
-  --input: #e9edef;
-  --ring: #00a884;
+  --radius: 0.75rem;
+  --background: hsl(150 10% 98%);
+  --foreground: hsl(160 15% 12%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(160 15% 12%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(160 15% 12%);
+  --primary: hsl(153 50% 53%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(36 100% 55%);
+  --secondary-foreground: hsl(160 15% 12%);
+  --muted: hsl(150 10% 95%);
+  --muted-foreground: hsl(155 8% 45%);
+  --accent: hsl(153 20% 93%);
+  --accent-foreground: hsl(160 15% 12%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(142 71% 45%);
+  --success-foreground: hsl(0 0% 100%);
+  --success-light: hsl(142 70% 95%);
+  --warning: hsl(36 100% 55%);
+  --warning-foreground: hsl(20 14% 12%);
+  --warning-light: hsl(40 100% 95%);
+  --info: hsl(210 90% 55%);
+  --info-foreground: hsl(0 0% 100%);
+  --info-light: hsl(210 100% 96%);
+  --border: hsl(150 8% 89%);
+  --input: hsl(150 8% 89%);
+  --ring: hsl(153 50% 53%);
+  --kanban-received: hsl(210 100% 97%);
+  --kanban-received-border: hsl(210 80% 80%);
+  --kanban-preparing: hsl(40 100% 96%);
+  --kanban-preparing-border: hsl(36 90% 70%);
+  --kanban-sent: hsl(142 70% 95%);
+  --kanban-sent-border: hsl(142 60% 70%);
+  --gradient-primary: linear-gradient(135deg, hsl(153 50% 53%) 0%, hsl(153 44% 79%) 100%);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: #ffffff;
-  --sidebar-foreground: #111b21;
-  --sidebar-primary: #00a884;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0f2f5;
-  --sidebar-accent-foreground: #111b21;
-  --sidebar-border: #e9edef;
-  --sidebar-ring: #00a884;
-  --whatsapp-green: #00a884;
-  --whatsapp-bubble-incoming: #ffffff;
-  --whatsapp-bubble-outgoing: #d9fdd3;
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(160 15% 12%);
+  --sidebar-primary: hsl(160 15% 12%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(153 15% 95%);
+  --sidebar-accent-foreground: hsl(160 15% 12%);
+  --sidebar-border: hsl(150 8% 91%);
+  --sidebar-ring: hsl(153 50% 53%);
+  --chat-surface: hsl(150 10% 95%);
+  --bubble-outgoing: hsl(153 45% 88%);
+  --bubble-outgoing-foreground: hsl(160 15% 12%);
+  --bubble-incoming: hsl(0 0% 100%);
+  --bubble-incoming-foreground: hsl(160 15% 12%);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: hsl(160 10% 7%);
+  --foreground: hsl(150 10% 95%);
+  --card: hsl(160 8% 11%);
+  --card-foreground: hsl(150 10% 95%);
+  --popover: hsl(160 8% 11%);
+  --popover-foreground: hsl(150 10% 95%);
+  --primary: hsl(153 55% 58%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(36 80% 45%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(160 8% 17%);
+  --muted-foreground: hsl(150 8% 60%);
+  --accent: hsl(160 8% 17%);
+  --accent-foreground: hsl(150 10% 95%);
+  --destructive: hsl(0 62% 50%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(142 60% 40%);
+  --success-foreground: hsl(0 0% 100%);
+  --success-light: hsl(142 40% 15%);
+  --warning: hsl(36 80% 45%);
+  --warning-foreground: hsl(0 0% 100%);
+  --warning-light: hsl(36 40% 15%);
+  --info: hsl(210 70% 50%);
+  --info-foreground: hsl(0 0% 100%);
+  --info-light: hsl(210 40% 15%);
+  --border: hsl(160 8% 19%);
+  --input: hsl(160 8% 19%);
+  --ring: hsl(153 55% 58%);
+  --kanban-received: hsl(210 40% 15%);
+  --kanban-received-border: hsl(210 50% 30%);
+  --kanban-preparing: hsl(36 40% 15%);
+  --kanban-preparing-border: hsl(36 50% 35%);
+  --kanban-sent: hsl(142 40% 12%);
+  --kanban-sent-border: hsl(142 50% 30%);
+  --gradient-primary: linear-gradient(135deg, hsl(153 55% 58%) 0%, hsl(153 35% 30%) 100%);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: hsl(160 10% 9%);
+  --sidebar-foreground: hsl(150 10% 95%);
+  --sidebar-primary: hsl(153 55% 58%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(155 8% 16%);
+  --sidebar-accent-foreground: hsl(150 10% 95%);
+  --sidebar-border: hsl(160 6% 16%);
+  --sidebar-ring: hsl(153 55% 58%);
+  --chat-surface: hsl(160 10% 7%);
+  --bubble-outgoing: hsl(153 35% 20%);
+  --bubble-outgoing-foreground: hsl(150 10% 95%);
+  --bubble-incoming: hsl(160 8% 13%);
+  --bubble-incoming-foreground: hsl(150 10% 95%);
 }
 
 @layer base {
@@ -121,6 +201,9 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
   }
 }
 

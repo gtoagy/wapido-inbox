@@ -2,7 +2,7 @@
 
 import { useEffect, useState, forwardRef, useImperativeHandle, useCallback, useMemo, useRef } from 'react';
 import { format, isValid, isToday, isYesterday } from 'date-fns';
-import { MessagesSquare, RefreshCw, Search } from 'lucide-react';
+import { MessagesSquare, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ViewSwitcher } from '@/components/view-switcher';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
@@ -101,7 +101,6 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   ({ onSelectConversation, selectedConversationId, isHidden = false }, ref) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('active');
   const [workflowStatusMap, setWorkflowStatusMap] = useState<Map<string, string>>(new Map());
@@ -147,7 +146,6 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       console.error('Error fetching conversations:', error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [statusFilter]);
 
@@ -164,11 +162,6 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       fetchWorkflowStatuses(conversations);
     }
   }, [conversations, fetchWorkflowStatuses]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchConversations();
-  };
 
   // Auto-polling for conversations (every 15 seconds)
   const { isPolling } = useAutoPolling({
@@ -195,13 +188,11 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
 
   useImperativeHandle(ref, () => ({
     refresh: async () => {
-      setRefreshing(true);
       const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
       const response = await fetch(`/api/conversations${params}`);
       const data = await response.json();
       const newConversations = data.data || [];
       setConversations(newConversations);
-      setRefreshing(false);
       return newConversations;
     },
     selectByPhoneNumber
@@ -232,7 +223,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
         <div className="flex-1 p-3 space-y-3">
           {[1, 2, 3, 4, 5, 6, 7].map((i) => (
             <div key={i} className="flex gap-3 p-3">
-              <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
+              <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-3 w-48" />
@@ -251,27 +242,18 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
     )}>
       <div className="p-4 border-b border-border bg-background">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <ViewSwitcher active="inbox" />
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold text-foreground">Conversaciones</h1>
-              {isPolling && (
-                <div
-                  className="h-2 w-2 rounded-full bg-green-500 animate-pulse"
-                  title="Actualizando"
-                />
-              )}
-            </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-xl font-bold text-foreground truncate">Conversaciones</h1>
+            {isPolling && (
+              <div
+                className="h-2 w-2 rounded-full bg-success animate-pulse flex-shrink-0"
+                title="Actualizando"
+              />
+            )}
           </div>
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:bg-muted/30"
-          >
-            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          </Button>
+          <div className="flex-shrink-0">
+            <ViewSwitcher active="inbox" />
+          </div>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -326,15 +308,15 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               )}
             >
               <div className="flex gap-3 items-start overflow-hidden">
-                <Avatar className="h-12 w-12 flex-shrink-0">
-                  <AvatarFallback className="bg-muted text-foreground text-sm font-medium">
+                <Avatar className="h-10 w-10 flex-shrink-0">
+                  <AvatarFallback className="bg-muted text-foreground text-xs font-medium">
                     {getAvatarInitials(rep.contactName, rep.phoneNumber)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 flex justify-between items-start gap-4 overflow-hidden">
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center gap-1.5">
-                      <p className="font-medium text-foreground truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {rep.contactName || rep.phoneNumber}
                       </p>
                       {count > 1 && (
@@ -349,9 +331,9 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                       <AssignmentBadge workflowStatus={workflowStatusMap.get(rep.id)} />
                     </div>
                     {rep.lastMessage && (
-                      <p className="text-sm text-muted-foreground truncate mt-0.5">
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {rep.lastMessage.direction === 'outbound' && (
-                          <span className="text-[#53bdeb]">✓ </span>
+                          <span className="text-muted-foreground">✓ </span>
                         )}
                         {rep.lastMessage.content}
                       </p>

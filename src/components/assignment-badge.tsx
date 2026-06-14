@@ -26,8 +26,8 @@ export function AssignmentBadge({
       className={cn(
         'text-[10px] px-1.5 py-0 h-4 flex-shrink-0 gap-0.5',
         isHuman
-          ? 'bg-orange-50 text-orange-700 border-orange-200'
-          : 'bg-green-50 text-green-700 border-green-200',
+          ? 'bg-warning-light text-warning border-warning/30'
+          : 'bg-success-light text-success border-success/30',
         className,
       )}
       title={isHuman ? 'Atendido por un humano' : 'Atendido por Wapi'}

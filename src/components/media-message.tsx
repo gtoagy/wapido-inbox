@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Props = {
@@ -13,7 +12,7 @@ type Props = {
   isOutbound?: boolean;
 };
 
-export function MediaMessage({ mediaId, messageType, caption, filename, isOutbound }: Props) {
+export function MediaMessage({ mediaId, messageType, caption, filename }: Props) {
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -40,7 +39,7 @@ export function MediaMessage({ mediaId, messageType, caption, filename, isOutbou
   if (loadFailed || !mediaUrl) {
     return (
       <div className="w-64 h-48 bg-muted rounded flex items-center justify-center">
-        <p className={cn('text-sm', isOutbound ? 'text-green-100' : 'text-muted-foreground')}>
+        <p className="text-sm text-muted-foreground">
           Medio no disponible
         </p>
       </div>
@@ -76,7 +75,7 @@ export function MediaMessage({ mediaId, messageType, caption, filename, isOutbou
           href={mediaUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 text-sm underline cursor-pointer hover:opacity-80 transition-opacity text-[#00a884]"
+          className="flex items-center gap-2 text-sm underline cursor-pointer hover:opacity-80 transition-opacity text-primary"
         >
           <FileText className="h-4 w-4" />
           {filename || 'Descargar documento'}

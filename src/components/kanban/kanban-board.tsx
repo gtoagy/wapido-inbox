@@ -189,27 +189,29 @@ export function KanbanBoard() {
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
       <header className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
-        <div className="flex items-center gap-3">
-          <ViewSwitcher active="kanban" />
+        <div className="flex items-center gap-x-3 gap-y-1 min-w-0 flex-wrap">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-foreground">CRM</h1>
+            <h1 className="text-2xl font-bold text-foreground">CRM</h1>
             {isPolling && (
-              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Actualizando" />
+              <div className="h-2 w-2 rounded-full bg-success animate-pulse" title="Actualizando" />
             )}
           </div>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground hidden sm:inline">
             {contactCount} contactos · {conversations.length} chats
           </span>
         </div>
-        <Button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:bg-muted/30"
-        >
-          <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-        </Button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <ViewSwitcher active="kanban" />
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:bg-muted/30"
+          >
+            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+          </Button>
+        </div>
       </header>
 
       {/* Board */}
@@ -224,7 +226,7 @@ export function KanbanBoard() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-1 gap-4 overflow-x-auto overflow-y-hidden p-4">
+        <div className="flex flex-1 gap-4 overflow-x-auto overflow-y-hidden p-4 snap-x snap-mandatory md:snap-none">
           {stages
             .slice()
             .sort((a, b) => a.position - b.position)
@@ -232,6 +234,7 @@ export function KanbanBoard() {
               <KanbanColumn
                 key={stage.id}
                 stage={stage}
+                allStages={stages}
                 conversations={conversationsByStage[stage.id] ?? []}
                 draggingId={draggingId}
                 onDragStart={setDraggingId}
