@@ -1,9 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
 import { MessageView } from '@/components/message-view';
@@ -45,7 +42,6 @@ export function KanbanBoard() {
   // reciente = la principal a la que se envían mensajes nuevos).
   const [activeContactConvs, setActiveContactConvs] = useState<ApiConversation[] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   const conversationsRef = useRef<ApiConversation[]>([]);
 
@@ -88,7 +84,6 @@ export function KanbanBoard() {
       console.error('Error fetching conversations:', error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
@@ -114,11 +109,6 @@ export function KanbanBoard() {
     enabled: true,
     onPoll: () => fetchWorkflowStatuses(),
   });
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchConversations();
-  };
 
   const handleDrop = (groupKey: string, stageId: string) => {
     setStageOverrides((prev) => ({ ...prev, [groupKey]: stageId }));
@@ -200,17 +190,8 @@ export function KanbanBoard() {
             {contactCount} contactos · {conversations.length} chats
           </span>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex-shrink-0">
           <ViewSwitcher active="kanban" />
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:bg-muted/30"
-          >
-            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-          </Button>
         </div>
       </header>
 
