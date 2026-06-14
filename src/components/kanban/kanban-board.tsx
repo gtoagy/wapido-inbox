@@ -175,7 +175,7 @@ export function KanbanBoard() {
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-foreground">CRM</h1>
+          <h1 className="text-2xl font-bold text-foreground">Inbox</h1>
           {isPolling && (
             <div className="h-2 w-2 rounded-full bg-success animate-pulse" title="Actualizando" />
           )}
