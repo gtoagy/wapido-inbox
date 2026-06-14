@@ -2,7 +2,7 @@
 
 import { useEffect, useState, forwardRef, useImperativeHandle, useCallback, useMemo, useRef } from 'react';
 import { format, isValid, isToday, isYesterday } from 'date-fns';
-import { MessagesSquare, RefreshCw, Search } from 'lucide-react';
+import { MessagesSquare, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ViewSwitcher } from '@/components/view-switcher';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
@@ -101,7 +101,6 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   ({ onSelectConversation, selectedConversationId, isHidden = false }, ref) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('active');
   const [workflowStatusMap, setWorkflowStatusMap] = useState<Map<string, string>>(new Map());
@@ -147,7 +146,6 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       console.error('Error fetching conversations:', error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [statusFilter]);
 
@@ -164,11 +162,6 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       fetchWorkflowStatuses(conversations);
     }
   }, [conversations, fetchWorkflowStatuses]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchConversations();
-  };
 
   // Auto-polling for conversations (every 15 seconds)
   const { isPolling } = useAutoPolling({
@@ -195,13 +188,11 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
 
   useImperativeHandle(ref, () => ({
     refresh: async () => {
-      setRefreshing(true);
       const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
       const response = await fetch(`/api/conversations${params}`);
       const data = await response.json();
       const newConversations = data.data || [];
       setConversations(newConversations);
-      setRefreshing(false);
       return newConversations;
     },
     selectByPhoneNumber
@@ -260,17 +251,8 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               />
             )}
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex-shrink-0">
             <ViewSwitcher active="inbox" />
-            <Button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:bg-muted/30"
-            >
-              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-            </Button>
           </div>
         </div>
         <div className="relative">
