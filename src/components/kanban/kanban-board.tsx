@@ -1,6 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
 import { MessageView } from '@/components/message-view';
@@ -42,6 +45,11 @@ export function KanbanBoard() {
   // reciente = la principal a la que se envían mensajes nuevos).
   const [activeContactConvs, setActiveContactConvs] = useState<ApiConversation[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  // El board arranca en 'all' (no 'active' como la lista) para no vaciar el
+  // embudo: necesitamos todas las conversaciones para repartirlas por columna,
+  // incluida la columna "Cerrado".
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('all');
 
   const conversationsRef = useRef<ApiConversation[]>([]);
 
@@ -73,9 +81,10 @@ export function KanbanBoard() {
 
   const fetchConversations = useCallback(async () => {
     try {
-      // Sin filtro de status traemos todas para repartirlas por el embudo.
-      // (Kapso solo acepta 'active'/'ended'; omitir el parámetro = todas.)
-      const response = await fetch('/api/conversations');
+      // Kapso solo acepta 'active'/'ended'; omitir el parámetro = todas.
+      // Default 'all' para poblar el embudo completo (ver statusFilter).
+      const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
+      const response = await fetch(`/api/conversations${params}`);
       const data = await response.json();
       const convs: ApiConversation[] = data.data || [];
       conversationsRef.current = convs;
@@ -85,7 +94,7 @@ export function KanbanBoard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchConversations();
@@ -146,11 +155,20 @@ export function KanbanBoard() {
     // 2) Una tarjeta por contacto: la conversación más reciente es la
     // representativa (la que se abre al hacer clic). El stage se asigna por
     // contacto (groupKey) para que sea estable aunque cambie la representativa.
+    const query = searchQuery.trim().toLowerCase();
     for (const [groupKey, convs] of byContact) {
       const sorted = convs
         .slice()
         .sort((a, b) => msTime(b.lastActiveAt) - msTime(a.lastActiveAt));
       const rep = sorted[0];
+      // Filtro de búsqueda por nombre/teléfono del contacto (en cliente).
+      if (
+        query &&
+        !rep.phoneNumber.toLowerCase().includes(query) &&
+        !rep.contactName?.toLowerCase().includes(query)
+      ) {
+        continue;
+      }
       const stageId = stageOverrides[groupKey] ?? defaultStageForConversation(groupKey, stages);
       if (!grouped[stageId]) continue;
       grouped[stageId].push({
@@ -166,7 +184,7 @@ export function KanbanBoard() {
       });
     }
     return grouped;
-  }, [conversations, stages, stageOverrides, workflowMap]);
+  }, [conversations, stages, stageOverrides, workflowMap, searchQuery]);
 
   const mainConv = activeContactConvs?.[0] ?? null;
 
@@ -184,6 +202,43 @@ export function KanbanBoard() {
           <ViewSwitcher active="kanban" />
         </div>
       </header>
+
+      {/* Buscador + filtros rápidos (mismo formato que la vista de lista) */}
+      <div className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar conversación..."
+            className="pl-9 bg-card border-border focus-visible:ring-primary rounded-lg"
+          />
+        </div>
+        <div className="flex gap-1">
+          <Button
+            variant={statusFilter === 'active' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter('active')}
+          >
+            Activos
+          </Button>
+          <Button
+            variant={statusFilter === 'all' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter('all')}
+          >
+            Todos
+          </Button>
+          <Button
+            variant={statusFilter === 'ended' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setStatusFilter('ended')}
+          >
+            Cerrados
+          </Button>
+        </div>
+      </div>
 
       {/* Board */}
       {loading ? (
