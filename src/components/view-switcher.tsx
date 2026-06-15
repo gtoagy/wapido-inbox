@@ -10,8 +10,9 @@ const baseItem =
   'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors';
 
 /**
- * Toggle para alternar entre la vista de lista (/) y la vista CRM Kanban (/kanban).
- * Resalta la vista activa y navega con Link (SPA) a la otra.
+ * Toggle para alternar entre la vista de lista (/) y la vista CRM Kanban
+ * (/?view=kanban). Ambas viven bajo la misma ruta; el Link solo cambia el query
+ * param (SPA, sin recargar) y el contenedor (inbox-app) decide qué renderizar.
  */
 // Fondo sólido (no semitransparente) para que el estado activo contraste igual
 // sin importar el color del header (gris en el inbox, blanco en el Kanban).
@@ -30,7 +31,7 @@ export function ViewSwitcher({ active }: { active: View }) {
         Lista
       </Link>
       <Link
-        href="/kanban"
+        href="/?view=kanban"
         aria-current={active === 'kanban' ? 'page' : undefined}
         className={cn(baseItem, active === 'kanban' ? activeItem : inactiveItem)}
       >
