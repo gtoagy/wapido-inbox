@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
+import { useStatusFilter } from '@/hooks/use-status-filter';
 import { MessageView } from '@/components/message-view';
 import { ViewSwitcher } from '@/components/view-switcher';
 import { KanbanColumn } from './kanban-column';
@@ -46,10 +47,10 @@ export function KanbanBoard() {
   const [activeContactConvs, setActiveContactConvs] = useState<ApiConversation[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  // El board arranca en 'all' (no 'active' como la lista) para no vaciar el
-  // embudo: necesitamos todas las conversaciones para repartirlas por columna,
-  // incluida la columna "Cerrado".
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('all');
+  // Filtro compartido y persistido con la vista Lista (default 'active'). Nota:
+  // con 'active' la columna "Cerrado" del embudo queda vacía hasta que el
+  // usuario elija "Todos"/"Cerrados"; es el comportamiento pedido.
+  const [statusFilter, setStatusFilter] = useStatusFilter();
 
   const conversationsRef = useRef<ApiConversation[]>([]);
 

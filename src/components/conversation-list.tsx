@@ -6,6 +6,7 @@ import { MessagesSquare, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ViewSwitcher } from '@/components/view-switcher';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
+import { useStatusFilter } from '@/hooks/use-status-filter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -102,7 +103,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('active');
+  const [statusFilter, setStatusFilter] = useStatusFilter();
   const [workflowStatusMap, setWorkflowStatusMap] = useState<Map<string, string>>(new Map());
 
   const conversationsRef = useRef<Conversation[]>([]);
