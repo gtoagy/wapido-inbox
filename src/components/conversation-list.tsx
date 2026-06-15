@@ -243,7 +243,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
       <div className="p-4 border-b border-border bg-background">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 min-w-0">
-            <h1 className="text-xl font-bold text-foreground truncate">Conversaciones</h1>
+            <h1 className="text-xl font-bold text-foreground truncate">Inbox</h1>
             {isPolling && (
               <div
                 className="h-2 w-2 rounded-full bg-success animate-pulse flex-shrink-0"

@@ -10,7 +10,7 @@ const baseItem =
   'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors';
 
 /**
- * Toggle para alternar entre el inbox clásico (/) y la vista CRM Kanban (/kanban).
+ * Toggle para alternar entre la vista de lista (/) y la vista CRM Kanban (/kanban).
  * Resalta la vista activa y navega con Link (SPA) a la otra.
  */
 // Fondo sólido (no semitransparente) para que el estado activo contraste igual
@@ -27,7 +27,7 @@ export function ViewSwitcher({ active }: { active: View }) {
         className={cn(baseItem, active === 'inbox' ? activeItem : inactiveItem)}
       >
         <MessageSquare className="h-3.5 w-3.5" />
-        Inbox
+        Lista
       </Link>
       <Link
         href="/kanban"

@@ -24,11 +24,9 @@ export type StageColor =
 // Etapas default de fábrica. El usuario podrá editarlas/reordenarlas/crear las
 // suyas en Fase 2; aquí son fijas para la demo.
 export const DEFAULT_STAGES: PipelineStage[] = [
-  { id: 'nuevo', name: 'Nuevo', color: 'blue', position: 0 },
-  { id: 'en-conversacion', name: 'En conversación', color: 'violet', position: 1 },
-  { id: 'pedido-en-proceso', name: 'Pedido en proceso', color: 'amber', position: 2 },
-  { id: 'pago-pendiente', name: 'Pago pendiente', color: 'orange', position: 3 },
-  { id: 'cerrado', name: 'Cerrado', color: 'green', position: 4 },
+  { id: 'pedido-en-proceso', name: 'Pedido en proceso', color: 'amber', position: 0 },
+  { id: 'necesita-atencion', name: 'Necesita atención', color: 'orange', position: 1 },
+  { id: 'cerrado', name: 'Cerrado', color: 'green', position: 2 },
 ];
 
 // Mapa de color → clases Tailwind para el header/acento de cada columna.
