@@ -191,22 +191,26 @@ export function KanbanBoard() {
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-foreground">Inbox</h1>
-          {isPolling && (
-            <div className="h-2 w-2 rounded-full bg-success animate-pulse" title="Actualizando" />
-          )}
+      {/* Header — replica el de la vista de lista: título + switch arriba
+          (en un ancho de columna para que el switch quede "relativamente
+          junto" como allá), buscador y filtros debajo. Todo en un solo bloque
+          con un único border-b al final (sin divisor intermedio). */}
+      <header className="w-full md:w-96 p-4 border-b border-border bg-background">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-xl font-bold text-foreground truncate">Inbox</h1>
+            {isPolling && (
+              <div
+                className="h-2 w-2 rounded-full bg-success animate-pulse flex-shrink-0"
+                title="Actualizando"
+              />
+            )}
+          </div>
+          <div className="flex-shrink-0">
+            <ViewSwitcher active="kanban" />
+          </div>
         </div>
-        <div className="flex-shrink-0">
-          <ViewSwitcher active="kanban" />
-        </div>
-      </header>
-
-      {/* Buscador + filtros rápidos (mismo formato que la vista de lista) */}
-      <div className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
@@ -216,7 +220,7 @@ export function KanbanBoard() {
             className="pl-9 bg-card border-border focus-visible:ring-primary rounded-lg"
           />
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 mt-3">
           <Button
             variant={statusFilter === 'active' ? 'default' : 'ghost'}
             size="sm"
@@ -239,7 +243,7 @@ export function KanbanBoard() {
             Cerrados
           </Button>
         </div>
-      </div>
+      </header>
 
       {/* Board */}
       {loading ? (
