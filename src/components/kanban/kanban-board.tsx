@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
 import { useStatusFilter } from '@/hooks/use-status-filter';
+import { useUnread } from '@/hooks/use-unread';
 import { MessageView } from '@/components/message-view';
 import { ViewSwitcher } from '@/components/view-switcher';
+import { NotificationSettingsButton } from '@/components/notification-settings-button';
 import { KanbanColumn } from './kanban-column';
 import type { KanbanConversation } from './conversation-card';
 import {
@@ -51,6 +53,7 @@ export function KanbanBoard() {
   // con 'active' la columna "Cerrado" del embudo queda vacía hasta que el
   // usuario elija "Todos"/"Cerrados"; es el comportamiento pedido.
   const [statusFilter, setStatusFilter] = useStatusFilter();
+  const { isUnread, markSeen } = useUnread();
 
   const conversationsRef = useRef<ApiConversation[]>([]);
 
@@ -129,12 +132,13 @@ export function KanbanBoard() {
   // (ordenadas de más reciente a más antigua) y mostramos la más reciente.
   const handleCardClick = useCallback(
     (card: KanbanConversation) => {
+      markSeen(card.groupKey, card.lastActiveAt);
       const convs = conversations
         .filter((c) => (c.phoneNumber || c.id) === card.groupKey)
         .sort((a, b) => msTime(b.lastActiveAt) - msTime(a.lastActiveAt));
       setActiveContactConvs(convs.length ? convs : null);
     },
-    [conversations],
+    [conversations, markSeen],
   );
 
   const closeChat = () => setActiveContactConvs(null);
@@ -172,6 +176,7 @@ export function KanbanBoard() {
       }
       const stageId = stageOverrides[groupKey] ?? defaultStageForConversation(groupKey, stages);
       if (!grouped[stageId]) continue;
+      const workflowStatus = workflowMap.get(rep.id)?.status;
       grouped[stageId].push({
         id: rep.id,
         groupKey,
@@ -181,11 +186,22 @@ export function KanbanBoard() {
         status: rep.status,
         lastActiveAt: rep.lastActiveAt,
         lastMessage: rep.lastMessage,
-        workflowStatus: workflowMap.get(rep.id)?.status,
+        workflowStatus,
+        unread: isUnread(groupKey, rep, workflowStatus),
       });
     }
+
+    // Dentro de cada columna: handoff (necesita humano) arriba, luego no-leído,
+    // luego por recencia.
+    const cardRank = (c: KanbanConversation) =>
+      c.workflowStatus === 'handoff' ? 2 : c.unread ? 1 : 0;
+    for (const stageId of Object.keys(grouped)) {
+      grouped[stageId].sort(
+        (a, b) => cardRank(b) - cardRank(a) || msTime(b.lastActiveAt) - msTime(a.lastActiveAt),
+      );
+    }
     return grouped;
-  }, [conversations, stages, stageOverrides, workflowMap, searchQuery]);
+  }, [conversations, stages, stageOverrides, workflowMap, searchQuery, isUnread]);
 
   const mainConv = activeContactConvs?.[0] ?? null;
 
@@ -206,7 +222,8 @@ export function KanbanBoard() {
               />
             )}
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <NotificationSettingsButton />
             <ViewSwitcher active="kanban" />
           </div>
         </div>

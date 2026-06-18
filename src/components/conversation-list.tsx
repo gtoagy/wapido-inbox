@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { ViewSwitcher } from '@/components/view-switcher';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
 import { useStatusFilter } from '@/hooks/use-status-filter';
+import { useUnread } from '@/hooks/use-unread';
+import { NotificationSettingsButton } from '@/components/notification-settings-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -105,6 +107,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useStatusFilter();
   const [workflowStatusMap, setWorkflowStatusMap] = useState<Map<string, string>>(new Map());
+  const { isUnread, markSeen } = useUnread();
 
   const conversationsRef = useRef<Conversation[]>([]);
 
@@ -200,13 +203,28 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   }));
 
   const contactGroups = useMemo(() => groupByContact(conversations), [conversations]);
-  const filteredGroups = contactGroups.filter((g) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      g.rep.phoneNumber.toLowerCase().includes(query) ||
-      g.rep.contactName?.toLowerCase().includes(query)
+
+  // Prioridad de orden: handoff (necesita humano) arriba, luego no-leído, luego
+  // por recencia. Así lo que el operador debe atender sube solo.
+  const groupRank = (g: ContactGroup): number => {
+    const status = workflowStatusMap.get(g.rep.id);
+    if (status === 'handoff') return 2;
+    if (isUnread(g.rep.phoneNumber || g.rep.id, g.rep, status)) return 1;
+    return 0;
+  };
+
+  const filteredGroups = contactGroups
+    .filter((g) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        g.rep.phoneNumber.toLowerCase().includes(query) ||
+        g.rep.contactName?.toLowerCase().includes(query)
+      );
+    })
+    .sort(
+      (a, b) =>
+        groupRank(b) - groupRank(a) || msTime(b.rep.lastActiveAt) - msTime(a.rep.lastActiveAt),
     );
-  });
 
   if (loading) {
     return (
@@ -252,7 +270,8 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               />
             )}
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <NotificationSettingsButton />
             <ViewSwitcher active="inbox" />
           </div>
         </div>
@@ -298,10 +317,16 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
           </div>
         ) : (
           <div className="w-full overflow-hidden">
-          {filteredGroups.map(({ rep, all, count }) => (
+          {filteredGroups.map(({ rep, all, count }) => {
+            const groupKey = rep.phoneNumber || rep.id;
+            const unread = isUnread(groupKey, rep, workflowStatusMap.get(rep.id));
+            return (
             <button
-              key={rep.phoneNumber || rep.id}
-              onClick={() => onSelectConversation(rep, all)}
+              key={groupKey}
+              onClick={() => {
+                markSeen(groupKey, rep.lastActiveAt);
+                onSelectConversation(rep, all);
+              }}
               onMouseEnter={() => prefetchMessages(rep.id)}
               className={cn(
                 'w-full p-3 pr-4 border-b border-border hover:bg-background text-left transition-colors relative overflow-hidden',
@@ -309,6 +334,12 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               )}
             >
               <div className="flex gap-3 items-start overflow-hidden">
+                {unread && (
+                  <span
+                    className="absolute left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary"
+                    title="Necesita tu atención"
+                  />
+                )}
                 <Avatar className="h-10 w-10 flex-shrink-0">
                   <AvatarFallback className="bg-muted text-foreground text-xs font-medium">
                     {getAvatarInitials(rep.contactName, rep.phoneNumber)}
@@ -317,7 +348,10 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                 <div className="flex-1 min-w-0 flex justify-between items-start gap-4 overflow-hidden">
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-medium text-foreground truncate">
+                      <p className={cn(
+                        'text-sm text-foreground truncate',
+                        unread ? 'font-semibold' : 'font-medium'
+                      )}>
                         {rep.contactName || rep.phoneNumber}
                       </p>
                       {count > 1 && (
@@ -332,7 +366,10 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                       <AssignmentBadge workflowStatus={workflowStatusMap.get(rep.id)} />
                     </div>
                     {rep.lastMessage && (
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      <p className={cn(
+                        'text-xs truncate mt-0.5',
+                        unread ? 'text-foreground font-medium' : 'text-muted-foreground'
+                      )}>
                         {rep.lastMessage.direction === 'outbound' && (
                           <span className="text-muted-foreground">✓ </span>
                         )}
@@ -346,7 +383,8 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                 </div>
               </div>
             </button>
-          ))
+            );
+          })
           }
           </div>
         )}

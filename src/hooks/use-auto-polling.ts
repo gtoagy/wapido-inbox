@@ -4,9 +4,16 @@ type UseAutoPollingOptions = {
   interval?: number;
   enabled?: boolean;
   onPoll: () => void | Promise<void>;
+  /**
+   * Si es true, el polling NO se pausa cuando la pestaña se oculta. Necesario
+   * para el motor de notificaciones, que debe seguir detectando mensajes nuevos
+   * justo cuando el operador está en otra pestaña/ventana. Default false (las
+   * vistas siguen pausando para no gastar requests cuando nadie las mira).
+   */
+  keepAliveWhenHidden?: boolean;
 };
 
-export function useAutoPolling({ interval = 5000, enabled = true, onPoll }: UseAutoPollingOptions) {
+export function useAutoPolling({ interval = 5000, enabled = true, onPoll, keepAliveWhenHidden = false }: UseAutoPollingOptions) {
   const [isPolling, setIsPolling] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -39,8 +46,10 @@ export function useAutoPolling({ interval = 5000, enabled = true, onPoll }: UseA
     setIsPolling(false);
   }, []);
 
-  // Handle visibility change (pause when tab is hidden)
+  // Handle visibility change (pause when tab is hidden, salvo keep-alive)
   useEffect(() => {
+    if (keepAliveWhenHidden) return; // el motor de notificaciones no pausa
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         setIsPaused(true);
@@ -58,11 +67,11 @@ export function useAutoPolling({ interval = 5000, enabled = true, onPoll }: UseA
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [enabled, startPolling, stopPolling]);
+  }, [enabled, startPolling, stopPolling, keepAliveWhenHidden]);
 
   // Start/stop polling based on enabled flag
   useEffect(() => {
-    if (enabled && !document.hidden) {
+    if (enabled && (keepAliveWhenHidden || !document.hidden)) {
       startPolling();
     } else {
       stopPolling();
@@ -71,7 +80,7 @@ export function useAutoPolling({ interval = 5000, enabled = true, onPoll }: UseA
     return () => {
       stopPolling();
     };
-  }, [enabled, startPolling, stopPolling]);
+  }, [enabled, startPolling, stopPolling, keepAliveWhenHidden]);
 
   return {
     isPolling,

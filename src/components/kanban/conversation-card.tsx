@@ -34,6 +34,8 @@ export type KanbanConversation = {
   };
   /** Estado del workflow de Kapso en vivo: running | handoff | waiting. */
   workflowStatus?: string;
+  /** Necesita atención humana sin revisar (no-leído). */
+  unread?: boolean;
 };
 
 function getAvatarInitials(contactName?: string, phoneNumber?: string): string {
@@ -80,11 +82,18 @@ export function ConversationCard({
       onMouseEnter={() => prefetchMessages(conversation.id)}
       onClick={() => onClick?.(conversation)}
       className={cn(
-        'group relative rounded-lg border border-border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing',
+        'group relative rounded-lg border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing',
         'transition-all hover:shadow-kanban hover:border-primary/30 hover:-translate-y-0.5',
+        conversation.unread ? 'border-primary/50' : 'border-border',
         isDragging && 'opacity-40 ring-2 ring-primary',
       )}
     >
+      {conversation.unread && (
+        <span
+          className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary"
+          title="Necesita tu atención"
+        />
+      )}
       <div className="flex gap-2.5 items-start">
         <Avatar className="h-9 w-9 flex-shrink-0">
           <AvatarFallback className="bg-muted text-foreground text-xs font-medium">
@@ -94,7 +103,10 @@ export function ConversationCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <p className="font-medium text-sm text-foreground truncate">
+              <p className={cn(
+                'text-sm text-foreground truncate',
+                conversation.unread ? 'font-semibold' : 'font-medium',
+              )}>
                 {conversation.contactName || conversation.phoneNumber}
               </p>
               {conversation.count != null && conversation.count > 1 && (
