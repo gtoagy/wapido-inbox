@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { ViewSwitcher } from '@/components/view-switcher';
 import { useAutoPolling } from '@/hooks/use-auto-polling';
 import { useStatusFilter } from '@/hooks/use-status-filter';
+import { useUnread } from '@/hooks/use-unread';
+import { NotificationSettingsButton } from '@/components/notification-settings-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -105,6 +107,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useStatusFilter();
   const [workflowStatusMap, setWorkflowStatusMap] = useState<Map<string, string>>(new Map());
+  const { isUnread, unreadBadge, markSeen } = useUnread();
 
   const conversationsRef = useRef<Conversation[]>([]);
 
@@ -200,13 +203,28 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   }));
 
   const contactGroups = useMemo(() => groupByContact(conversations), [conversations]);
-  const filteredGroups = contactGroups.filter((g) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      g.rep.phoneNumber.toLowerCase().includes(query) ||
-      g.rep.contactName?.toLowerCase().includes(query)
+
+  // Prioridad de orden: handoff (necesita humano) arriba, luego no-leído, luego
+  // por recencia. Así lo que el operador debe atender sube solo.
+  const groupRank = (g: ContactGroup): number => {
+    const status = workflowStatusMap.get(g.rep.id);
+    if (status === 'handoff') return 2;
+    if (isUnread(g.rep.phoneNumber || g.rep.id, g.rep, status)) return 1;
+    return 0;
+  };
+
+  const filteredGroups = contactGroups
+    .filter((g) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        g.rep.phoneNumber.toLowerCase().includes(query) ||
+        g.rep.contactName?.toLowerCase().includes(query)
+      );
+    })
+    .sort(
+      (a, b) =>
+        groupRank(b) - groupRank(a) || msTime(b.rep.lastActiveAt) - msTime(a.rep.lastActiveAt),
     );
-  });
 
   if (loading) {
     return (
@@ -252,7 +270,8 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               />
             )}
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <NotificationSettingsButton />
             <ViewSwitcher active="inbox" />
           </div>
         </div>
@@ -298,10 +317,18 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
           </div>
         ) : (
           <div className="w-full overflow-hidden">
-          {filteredGroups.map(({ rep, all, count }) => (
+          {filteredGroups.map(({ rep, all, count }) => {
+            const groupKey = rep.phoneNumber || rep.id;
+            const status = workflowStatusMap.get(rep.id);
+            const unread = isUnread(groupKey, rep, status);
+            const unreadCount = unreadBadge(groupKey, rep, status);
+            return (
             <button
-              key={rep.phoneNumber || rep.id}
-              onClick={() => onSelectConversation(rep, all)}
+              key={groupKey}
+              onClick={() => {
+                markSeen(groupKey, rep.lastActiveAt);
+                onSelectConversation(rep, all);
+              }}
               onMouseEnter={() => prefetchMessages(rep.id)}
               className={cn(
                 'w-full p-3 pr-4 border-b border-border hover:bg-background text-left transition-colors relative overflow-hidden',
@@ -317,7 +344,10 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                 <div className="flex-1 min-w-0 flex justify-between items-start gap-4 overflow-hidden">
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-medium text-foreground truncate">
+                      <p className={cn(
+                        'text-sm text-foreground truncate',
+                        unread ? 'font-semibold' : 'font-medium'
+                      )}>
                         {rep.contactName || rep.phoneNumber}
                       </p>
                       {count > 1 && (
@@ -332,7 +362,10 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                       <AssignmentBadge workflowStatus={workflowStatusMap.get(rep.id)} />
                     </div>
                     {rep.lastMessage && (
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      <p className={cn(
+                        'text-xs truncate mt-0.5',
+                        unread ? 'text-foreground font-medium' : 'text-muted-foreground'
+                      )}>
                         {rep.lastMessage.direction === 'outbound' && (
                           <span className="text-muted-foreground">✓ </span>
                         )}
@@ -340,13 +373,24 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                       </p>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground flex-shrink-0 mt-0.5 ml-4">
-                    {formatConversationDate(rep.lastActiveAt)}
-                  </span>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0 ml-4">
+                    <span className="text-xs text-muted-foreground mt-0.5">
+                      {formatConversationDate(rep.lastActiveAt)}
+                    </span>
+                    {unreadCount > 0 && (
+                      <span
+                        className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold leading-none"
+                        title={`${unreadCount} sin leer`}
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </button>
-          ))
+            );
+          })
           }
           </div>
         )}

@@ -34,6 +34,10 @@ export type KanbanConversation = {
   };
   /** Estado del workflow de Kapso en vivo: running | handoff | waiting. */
   workflowStatus?: string;
+  /** Necesita atención humana sin revisar (no-leído). */
+  unread?: boolean;
+  /** Mensajes acumulados sin leer (globito). 0 = no mostrar. */
+  unreadCount?: number;
 };
 
 function getAvatarInitials(contactName?: string, phoneNumber?: string): string {
@@ -80,11 +84,20 @@ export function ConversationCard({
       onMouseEnter={() => prefetchMessages(conversation.id)}
       onClick={() => onClick?.(conversation)}
       className={cn(
-        'group relative rounded-lg border border-border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing',
+        'group relative rounded-lg border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing',
         'transition-all hover:shadow-kanban hover:border-primary/30 hover:-translate-y-0.5',
+        conversation.unread ? 'border-primary/50' : 'border-border',
         isDragging && 'opacity-40 ring-2 ring-primary',
       )}
     >
+      {conversation.unreadCount != null && conversation.unreadCount > 0 && (
+        <span
+          className="absolute right-2 top-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold leading-none"
+          title={`${conversation.unreadCount} sin leer`}
+        >
+          {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+        </span>
+      )}
       <div className="flex gap-2.5 items-start">
         <Avatar className="h-9 w-9 flex-shrink-0">
           <AvatarFallback className="bg-muted text-foreground text-xs font-medium">
@@ -94,7 +107,10 @@ export function ConversationCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <p className="font-medium text-sm text-foreground truncate">
+              <p className={cn(
+                'text-sm text-foreground truncate',
+                conversation.unread ? 'font-semibold' : 'font-medium',
+              )}>
                 {conversation.contactName || conversation.phoneNumber}
               </p>
               {conversation.count != null && conversation.count > 1 && (
