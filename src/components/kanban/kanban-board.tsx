@@ -53,7 +53,7 @@ export function KanbanBoard() {
   // con 'active' la columna "Cerrado" del embudo queda vacía hasta que el
   // usuario elija "Todos"/"Cerrados"; es el comportamiento pedido.
   const [statusFilter, setStatusFilter] = useStatusFilter();
-  const { isUnread, markSeen } = useUnread();
+  const { isUnread, unreadBadge, markSeen } = useUnread();
 
   const conversationsRef = useRef<ApiConversation[]>([]);
 
@@ -188,6 +188,7 @@ export function KanbanBoard() {
         lastMessage: rep.lastMessage,
         workflowStatus,
         unread: isUnread(groupKey, rep, workflowStatus),
+        unreadCount: unreadBadge(groupKey, rep, workflowStatus),
       });
     }
 
@@ -201,7 +202,7 @@ export function KanbanBoard() {
       );
     }
     return grouped;
-  }, [conversations, stages, stageOverrides, workflowMap, searchQuery, isUnread]);
+  }, [conversations, stages, stageOverrides, workflowMap, searchQuery, isUnread, unreadBadge]);
 
   const mainConv = activeContactConvs?.[0] ?? null;
 

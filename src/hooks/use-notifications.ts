@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAutoPolling } from './use-auto-polling';
-import { useUnread } from './use-unread';
+import { useUnread, bumpUnreadCount } from './use-unread';
 import { readNotificationSettings } from './use-notification-settings';
 import { playNotificationSound } from '@/lib/notification-sound';
 
@@ -32,8 +32,12 @@ type ApiConversation = {
   status?: string;
   contactName?: string;
   lastActiveAt?: string;
+  messagesCount?: number;
   lastMessage?: { content: string; direction: string; type?: string };
 };
+
+// Snapshot del poll anterior por contacto, para detectar mensajes nuevos.
+type Snap = { ts: number; count: number };
 
 const POLL_INTERVAL = 15000;
 
@@ -79,8 +83,8 @@ export function useInboxNotifications(): void {
   const { seen, isUnread } = useUnread();
   const [reps, setReps] = useState<ApiConversation[]>([]);
 
-  // Snapshot del poll anterior: groupKey -> ms del último inbound conocido.
-  const snapshotRef = useRef<Map<string, number>>(new Map());
+  // Snapshot del poll anterior: groupKey -> { ts, count } para detectar nuevos.
+  const snapshotRef = useRef<Map<string, Snap>>(new Map());
   const isFirstPollRef = useRef(true);
   // Espejo de `seen` para leerlo dentro del callback de poll sin re-suscribir.
   const seenRef = useRef(seen);
@@ -99,24 +103,30 @@ export function useInboxNotifications(): void {
     const repList = reduceToReps(convs);
     setReps(repList);
 
-    const nextSnapshot = new Map<string, number>();
+    const wasFirst = isFirstPollRef.current;
+    const nextSnapshot = new Map<string, Snap>();
     const newlyArrived: ApiConversation[] = [];
     const seenMap = seenRef.current;
 
     for (const rep of repList) {
       const key = groupKeyOf(rep);
       const ts = msTime(rep.lastActiveAt);
-      nextSnapshot.set(key, ts);
+      const count = rep.messagesCount ?? 0;
+      const prev = snapshotRef.current.get(key);
+      nextSnapshot.set(key, { ts, count });
 
       const isInbound = rep.lastMessage?.direction === 'inbound';
-      const advanced = ts > (snapshotRef.current.get(key) ?? 0);
+      const advanced = ts > (prev?.ts ?? 0);
       const unseen = ts > (seenMap[key] ?? 0);
-      if (isInbound && advanced && unseen) {
+      if (!wasFirst && isInbound && advanced && unseen) {
         newlyArrived.push(rep);
+        // Cuántos mensajes nuevos entraron en esta ventana. Sin baseline previo
+        // (chat visto por primera vez esta sesión) sumamos 1 como piso honesto.
+        const delta = prev ? Math.max(1, count - prev.count) : 1;
+        bumpUnreadCount(key, delta);
       }
     }
 
-    const wasFirst = isFirstPollRef.current;
     snapshotRef.current = nextSnapshot;
     isFirstPollRef.current = false;
 

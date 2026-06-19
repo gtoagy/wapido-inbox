@@ -36,6 +36,8 @@ export type KanbanConversation = {
   workflowStatus?: string;
   /** Necesita atención humana sin revisar (no-leído). */
   unread?: boolean;
+  /** Mensajes acumulados sin leer (globito). 0 = no mostrar. */
+  unreadCount?: number;
 };
 
 function getAvatarInitials(contactName?: string, phoneNumber?: string): string {
@@ -88,11 +90,13 @@ export function ConversationCard({
         isDragging && 'opacity-40 ring-2 ring-primary',
       )}
     >
-      {conversation.unread && (
+      {conversation.unreadCount != null && conversation.unreadCount > 0 && (
         <span
-          className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary"
-          title="Necesita tu atención"
-        />
+          className="absolute right-2 top-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold leading-none"
+          title={`${conversation.unreadCount} sin leer`}
+        >
+          {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+        </span>
       )}
       <div className="flex gap-2.5 items-start">
         <Avatar className="h-9 w-9 flex-shrink-0">

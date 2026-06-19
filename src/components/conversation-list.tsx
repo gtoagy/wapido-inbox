@@ -107,7 +107,7 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useStatusFilter();
   const [workflowStatusMap, setWorkflowStatusMap] = useState<Map<string, string>>(new Map());
-  const { isUnread, markSeen } = useUnread();
+  const { isUnread, unreadBadge, markSeen } = useUnread();
 
   const conversationsRef = useRef<Conversation[]>([]);
 
@@ -319,7 +319,9 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
           <div className="w-full overflow-hidden">
           {filteredGroups.map(({ rep, all, count }) => {
             const groupKey = rep.phoneNumber || rep.id;
-            const unread = isUnread(groupKey, rep, workflowStatusMap.get(rep.id));
+            const status = workflowStatusMap.get(rep.id);
+            const unread = isUnread(groupKey, rep, status);
+            const unreadCount = unreadBadge(groupKey, rep, status);
             return (
             <button
               key={groupKey}
@@ -334,12 +336,6 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
               )}
             >
               <div className="flex gap-3 items-start overflow-hidden">
-                {unread && (
-                  <span
-                    className="absolute left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-primary"
-                    title="Necesita tu atención"
-                  />
-                )}
                 <Avatar className="h-10 w-10 flex-shrink-0">
                   <AvatarFallback className="bg-muted text-foreground text-xs font-medium">
                     {getAvatarInitials(rep.contactName, rep.phoneNumber)}
@@ -377,9 +373,19 @@ export const ConversationList = forwardRef<ConversationListRef, Props>(
                       </p>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground flex-shrink-0 mt-0.5 ml-4">
-                    {formatConversationDate(rep.lastActiveAt)}
-                  </span>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0 ml-4">
+                    <span className="text-xs text-muted-foreground mt-0.5">
+                      {formatConversationDate(rep.lastActiveAt)}
+                    </span>
+                    {unreadCount > 0 && (
+                      <span
+                        className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold leading-none"
+                        title={`${unreadCount} sin leer`}
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </button>
